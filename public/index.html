@@ -1,0 +1,2226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TurnoFácil</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    * { font-family: 'Outfit', sans-serif; box-sizing: border-box; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    html, body, #root { height: 100%; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #7C3AED;
+      --primary-light: #8B5CF6;
+      --primary-glow: rgba(124,58,237,0.25);
+      --bg-base: #0C0C14;
+      --bg-dark: #111119;
+      --bg-card: #18181F;
+      --bg-card2: #20202A;
+      --border: rgba(255,255,255,0.07);
+      --border-light: rgba(255,255,255,0.12);
+      --text: #F0F0FF;
+      --text-muted: #8888AA;
+      --text-dim: #555570;
+    }
+
+    body.light {
+      --bg-base: #F3F4F8;
+      --bg-dark: #E8EAF0;
+      --bg-card: #FFFFFF;
+      --bg-card2: #F0F1F6;
+      --border: rgba(0,0,0,0.08);
+      --border-light: rgba(0,0,0,0.14);
+      --text: #1A1A2E;
+      --text-muted: #555570;
+      --text-dim: #9999BB;
+    }
+
+    body, .card, .card2, .tf-input, .tf-select, button {
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+
+    body { background: var(--bg-base); color: var(--text); }
+
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; }
+    .card2 { background: var(--bg-card2); border: 1px solid var(--border); border-radius: 10px; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #333350; border-radius: 99px; }
+
+    /* Toast */
+    .toast { animation: slideIn 0.3s ease; }
+    @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    /* Ticket big number */
+    .ticket-num { font-family: 'JetBrains Mono', monospace; font-weight: 800; letter-spacing: -2px; }
+
+    /* Monitor big number animation */
+    @keyframes popIn { 0% { transform: scale(0.7); opacity: 0; } 60% { transform: scale(1.05); } 100% { transform: scale(1); opacity: 1; } }
+    .pop-in { animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+
+    /* Pulse glow */
+    @keyframes pulseGlow { 0%,100% { box-shadow: 0 0 20px var(--primary-glow); } 50% { box-shadow: 0 0 50px rgba(124,58,237,0.5); } }
+    .pulse-glow { animation: pulseGlow 2s ease-in-out infinite; }
+
+    /* Totem button hover */
+    .totem-btn { transition: transform 0.15s ease, box-shadow 0.15s ease; cursor: pointer; }
+    .totem-btn:hover { transform: translateY(-3px); }
+    .totem-btn:active { transform: scale(0.97); }
+
+    /* Sidebar active */
+    .nav-item { transition: all 0.15s ease; border-radius: 8px; }
+    .nav-item.active { background: var(--primary-glow); color: var(--primary-light); }
+    .nav-item:hover:not(.active) { background: rgba(255,255,255,0.04); }
+
+    /* Input */
+    .tf-input {
+      background: var(--bg-card2); border: 1px solid var(--border-light);
+      color: var(--text); border-radius: 8px; padding: 10px 14px;
+      width: 100%; outline: none; transition: border-color 0.2s;
+      font-family: 'Outfit', sans-serif; font-size: 14px;
+    }
+    .tf-input:focus { border-color: var(--primary-light); }
+
+    /* Select */
+    .tf-select {
+      background: var(--bg-card2); border: 1px solid var(--border-light);
+      color: var(--text); border-radius: 8px; padding: 10px 14px;
+      outline: none; font-family: 'Outfit', sans-serif; font-size: 14px;
+    }
+
+    /* Badge */
+    .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; }
+
+    /* Monitor ticker */
+    @keyframes ticker { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
+    .ticker-text { animation: ticker 25s linear infinite; white-space: nowrap; }
+
+    /* Print styles */
+    @media print {
+      body > * { display: none !important; }
+      #print-area { display: block !important; font-family: monospace; }
+    }
+    #print-area { display: none; }
+
+    /* Stat card hover */
+    .stat-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .stat-card:hover { transform: translateY(-2px); }
+
+    /* Table row hover */
+    .tr-hover:hover { background: rgba(255,255,255,0.03); }
+
+    /* Modal overlay */
+    .modal-overlay { animation: fadeIn 0.15s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal-box { animation: slideUp 0.2s cubic-bezier(0.34,1.2,0.64,1); }
+    @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<div id="print-area"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback, createContext, useContext } = React;
+
+// ============================================================
+// API HELPER
+// ============================================================
+const API = {
+  get token() { return localStorage.getItem('tf_token'); },
+  set token(v) { v ? localStorage.setItem('tf_token', v) : localStorage.removeItem('tf_token'); },
+
+  async req(path, opts = {}) {
+    const res = await fetch(path, {
+      ...opts,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+        ...(opts.headers || {}),
+      },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error del servidor');
+    return data;
+  },
+  get:    p       => API.req(p),
+  post:   (p, b)  => API.req(p, { method: 'POST',   body: JSON.stringify(b) }),
+  put:    (p, b)  => API.req(p, { method: 'PUT',    body: JSON.stringify(b) }),
+  delete: p       => API.req(p, { method: 'DELETE' }),
+};
+
+// ============================================================
+// SOUND
+// ============================================================
+// AUDIO — AudioContext persistente, se desbloquea con primer gesto
+// ============================================================
+let _audioCtx = null;
+let _audioUnlocked = false;
+
+function getAudioCtx() {
+  if (!_audioCtx) {
+    _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return _audioCtx;
+}
+
+// Llamar en cualquier evento de usuario (click/touch)
+function unlockAudio() {
+  if (_audioUnlocked) return;
+  try {
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') {
+      ctx.resume().then(() => { _audioUnlocked = true; });
+    } else {
+      _audioUnlocked = true;
+    }
+    // Reproducir silencio para desbloquear en Safari
+    const buf = ctx.createBuffer(1, 1, 22050);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+  } catch {}
+}
+
+function playBeep(freq = 820, dur = 0.35, vol = 0.4) {
+  try {
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') { ctx.resume(); return; }
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    gain.gain.setValueAtTime(vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + dur + 0.05);
+    osc.onended = () => { try { osc.disconnect(); gain.disconnect(); } catch {} };
+  } catch (e) { console.warn('[Audio]', e.message); }
+}
+
+function playSuccess() {
+  // Tres tonos ascendentes: llamativo pero no molesto
+  playBeep(520, 0.12, 0.3);
+  setTimeout(() => playBeep(660, 0.12, 0.35), 130);
+  setTimeout(() => playBeep(880, 0.28, 0.4),  260);
+}
+
+// ============================================================
+// PRINT TICKET
+// ============================================================
+function printTicket(ticket, config = {}) {
+  const d = new Date().toLocaleString('es-PY', { hour12: false });
+  const area = document.getElementById('print-area');
+  area.innerHTML = `
+    <div style="width:72mm;padding:12px;font-family:monospace;text-align:center;">
+      <div style="font-size:18px;font-weight:bold;border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:8px;">
+        ${config.businessName || 'TurnoFácil'}
+      </div>
+      <div style="font-size:13px;margin-bottom:12px;">${config.businessSubtitle || 'Sistema de Turnos'}</div>
+      <div style="font-size:16px;margin-bottom:4px;">${ticket.serviceName}</div>
+      <div style="font-size:56px;font-weight:900;letter-spacing:-2px;margin:8px 0;">${ticket.number}</div>
+      <div style="font-size:13px;margin-bottom:4px;">Posición en cola: #${ticket.queuePosition}</div>
+      <div style="font-size:13px;margin-bottom:12px;">Espera estimada: ~${ticket.estimatedWait} min</div>
+      <div style="border-top:1px dashed #000;padding-top:8px;font-size:11px;">${d}</div>
+      <div style="font-size:11px;margin-top:4px;">${config.ticketFooter || 'Conserve este ticket hasta ser atendido.'}</div>
+    </div>
+  `;
+  area.style.display = 'block';
+  setTimeout(() => { window.print(); area.style.display = 'none'; area.innerHTML = ''; }, 100);
+}
+
+// ============================================================
+// TOAST SYSTEM
+// ============================================================
+const ToastContext = createContext(null);
+function ToastProvider({ children }) {
+  const [toasts, setToasts] = useState([]);
+  const add = useCallback((msg, type = 'info') => {
+    const id = Date.now();
+    setToasts(t => [...t, { id, msg, type }]);
+    setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 3500);
+  }, []);
+  const icons = { success: '✓', error: '✕', info: 'ℹ', warning: '⚠' };
+  const colors = { success: '#10B981', error: '#EF4444', info: '#6366F1', warning: '#F59E0B' };
+  return (
+    <ToastContext.Provider value={add}>
+      {children}
+      <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9999, display: 'flex', flexDirection: 'column', gap: 10, pointerEvents: 'none' }}>
+        {toasts.map(t => (
+          <div key={t.id} className="toast" style={{
+            background: '#1A1A27', border: `1px solid ${colors[t.type]}33`,
+            borderLeft: `3px solid ${colors[t.type]}`, borderRadius: 10,
+            padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 10,
+            boxShadow: '0 8px 30px rgba(0,0,0,0.4)', minWidth: 240, maxWidth: 360,
+          }}>
+            <span style={{ color: colors[t.type], fontWeight: 700 }}>{icons[t.type]}</span>
+            <span style={{ fontSize: 14, color: '#E0E0F0' }}>{t.msg}</span>
+          </div>
+        ))}
+      </div>
+    </ToastContext.Provider>
+  );
+}
+const useToast = () => useContext(ToastContext);
+
+// ============================================================
+// THEME SYSTEM
+// ============================================================
+const ThemeContext = createContext(null);
+
+function ThemeProvider({ children }) {
+  const [dark, setDark] = useState(() => {
+    const saved = localStorage.getItem('tf_theme');
+    return saved ? saved === 'dark' : true;
+  });
+
+  useEffect(() => {
+    document.body.classList.toggle('light', !dark);
+    localStorage.setItem('tf_theme', dark ? 'dark' : 'light');
+  }, [dark]);
+
+  const toggle = () => setDark(d => !d);
+  return (
+    <ThemeContext.Provider value={{ dark, toggle }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+const useTheme = () => useContext(ThemeContext);
+
+function ThemeToggleBtn({ style = {} }) {
+  const { dark, toggle } = useTheme();
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      onClick={toggle}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      title={dark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+      style={{
+        background: hover
+          ? (dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)')
+          : (dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'),
+        border: `1px solid var(--border-light)`,
+        borderRadius: 8, padding: '6px 11px',
+        cursor: 'pointer', fontSize: 16, lineHeight: 1,
+        color: 'var(--text-muted)', transition: 'all 0.15s',
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        fontFamily: 'Outfit, sans-serif', fontWeight: 600, fontSize: 13,
+        ...style,
+      }}>
+      {dark ? '☀️' : '🌙'} {dark ? 'Claro' : 'Oscuro'}
+    </button>
+  );
+}
+
+// ============================================================
+// SHARED COMPONENTS
+// ============================================================
+function Btn({ children, onClick, variant = 'primary', size = 'md', disabled, full, style = {} }) {
+  const sizes = { sm: '8px 14px', md: '10px 20px', lg: '14px 28px', xl: '16px 36px' };
+  const fsize = { sm: 13, md: 14, lg: 15, xl: 16 };
+  const vars = {
+    primary:   { bg: 'var(--primary)', hover: '#6D28D9', text: '#fff' },
+    secondary: { bg: 'rgba(255,255,255,0.07)', hover: 'rgba(255,255,255,0.11)', text: 'var(--text)' },
+    danger:    { bg: '#DC2626', hover: '#B91C1C', text: '#fff' },
+    success:   { bg: '#059669', hover: '#047857', text: '#fff' },
+    warning:   { bg: '#D97706', hover: '#B45309', text: '#fff' },
+    ghost:     { bg: 'transparent', hover: 'rgba(255,255,255,0.07)', text: 'var(--text-muted)' },
+    info:      { bg: '#2563EB', hover: '#1D4ED8', text: '#fff' },
+  };
+  const v = vars[variant] || vars.primary;
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      onClick={onClick} disabled={disabled}
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      style={{
+        background: hover ? v.hover : v.bg, color: v.text,
+        padding: sizes[size], fontSize: fsize[size], fontWeight: 600,
+        borderRadius: 8, border: 'none', cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.5 : 1, width: full ? '100%' : undefined,
+        transition: 'background 0.15s', fontFamily: 'Outfit, sans-serif',
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+        ...style,
+      }}
+    >{children}</button>
+  );
+}
+
+function Modal({ open, onClose, title, children, size = 'md' }) {
+  if (!open) return null;
+  const widths = { sm: 380, md: 520, lg: 680, xl: 860 };
+  return (
+    <div className="modal-overlay" onClick={onClose} style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)',
+      zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20
+    }}>
+      <div className="modal-box card" onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: widths[size], maxHeight: '90vh', overflowY: 'auto', padding: 28 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+          <h3 style={{ fontWeight: 700, fontSize: 18, margin: 0 }}>{title}</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 22, lineHeight: 1 }}>✕</button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function Badge({ children, color = '#6366F1' }) {
+  return <span className="badge" style={{ background: color + '22', color }}>{children}</span>;
+}
+
+function Spinner({ size = 20 }) {
+  return (
+    <div style={{ width: size, height: size, border: `2px solid rgba(255,255,255,0.1)`, borderTopColor: 'var(--primary-light)', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }}>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
+function FormField({ label, children, error }) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>{label}</label>
+      {children}
+      {error && <p style={{ fontSize: 12, color: '#EF4444', marginTop: 4 }}>{error}</p>}
+    </div>
+  );
+}
+
+function StatCard({ label, value, sub, color = 'var(--primary-light)', icon }) {
+  return (
+    <div className="card stat-card" style={{ padding: '18px 22px', flex: 1, minWidth: 140 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 500 }}>{label}</span>
+        {icon && <span style={{ fontSize: 20 }}>{icon}</span>}
+      </div>
+      <div style={{ fontSize: 32, fontWeight: 800, color, fontFamily: 'JetBrains Mono', letterSpacing: -1 }}>{value}</div>
+      {sub && <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 4 }}>{sub}</div>}
+    </div>
+  );
+}
+
+// ============================================================
+// HOME PAGE
+// ============================================================
+function HomePage({ navigate }) {
+  const links = [
+    { path: '/monitor', label: 'Monitor',  desc: 'Pantalla pública de turnos',  emoji: '📺', color: '#3B82F6' },
+    { path: '/totem',   label: 'Tótem',    desc: 'Terminal de autoservicio',     emoji: '🏧', color: '#10B981' },
+    { path: '/agent',   label: 'Agente',   desc: 'Panel de atención',            emoji: '💼', color: '#F59E0B' },
+    { path: '/admin',   label: 'Admin',    desc: 'Administración del sistema',   emoji: '⚙️', color: '#8B5CF6' },
+  ];
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 40, padding: 40, background: 'var(--bg-base)' }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: 48, marginBottom: 12 }}>🎫</div>
+        <h1 style={{ fontSize: 42, fontWeight: 900, background: 'linear-gradient(135deg, #A78BFA, #60A5FA)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>TurnoFácil</h1>
+        <p style={{ color: 'var(--text-muted)', marginTop: 8, fontSize: 16 }}>Sistema de Gestión de Turnos</p>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, width: '100%', maxWidth: 560 }}>
+        {links.map(l => (
+          <div key={l.path} onClick={() => navigate(l.path)} className="totem-btn card" style={{ padding: 28, textAlign: 'center', cursor: 'pointer', borderTop: `3px solid ${l.color}` }}>
+            <div style={{ fontSize: 36, marginBottom: 10 }}>{l.emoji}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{l.label}</div>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{l.desc}</div>
+          </div>
+        ))}
+      </div>
+      <p style={{ color: 'var(--text-dim)', fontSize: 13 }}>http://localhost:3000</p>
+    </div>
+  );
+}
+
+// ============================================================
+// LOGIN PAGE
+// ============================================================
+function LoginPage({ onLogin, redirectTo }) {
+  const [form, setForm] = useState({ username: '', password: '' });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const toast = useToast();
+
+  const handle = async e => {
+    e?.preventDefault();
+    if (!form.username || !form.password) { setError('Complete todos los campos'); return; }
+    setLoading(true); setError('');
+    try {
+      await onLogin(form.username, form.password);
+    } catch (err) {
+      setError(err.message || 'Error al iniciar sesión');
+    } finally { setLoading(false); }
+  };
+
+  const hints = {
+    '/agent': [{ u: 'caja1', p: '1234' }, { u: 'atencion1', p: '1234' }, { u: 'info1', p: '1234' }],
+    '/admin': [{ u: 'admin', p: 'admin123' }, { u: 'gerente', p: 'gerente123' }],
+  };
+
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-base)', padding: 20 }}>
+      <div className="card" style={{ width: '100%', maxWidth: 400, padding: '36px 32px' }}>
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div style={{ fontSize: 36, marginBottom: 8 }}>{redirectTo === '/agent' ? '💼' : '⚙️'}</div>
+          <h2 style={{ fontSize: 24, fontWeight: 800, margin: 0 }}>Iniciar Sesión</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: 14, marginTop: 4 }}>{redirectTo === '/agent' ? 'Panel de Agente' : 'Panel de Administración'}</p>
+        </div>
+        {error && <div style={{ background: '#DC262622', border: '1px solid #DC262644', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 14, color: '#FCA5A5' }}>{error}</div>}
+        <div style={{ marginBottom: 14 }}>
+          <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>Usuario</label>
+          <input className="tf-input" value={form.username} onChange={e => setForm(f => ({ ...f, username: e.target.value }))} onKeyDown={e => e.key === 'Enter' && handle()} placeholder="nombre de usuario" autoFocus />
+        </div>
+        <div style={{ marginBottom: 22 }}>
+          <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>Contraseña</label>
+          <input className="tf-input" type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} onKeyDown={e => e.key === 'Enter' && handle()} placeholder="••••••••" />
+        </div>
+        <Btn onClick={handle} full disabled={loading} size="lg">{loading ? <Spinner size={18} /> : 'Entrar'}</Btn>
+        {hints[redirectTo] && (
+          <div style={{ marginTop: 20, padding: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: 8, fontSize: 12 }}>
+            <p style={{ color: 'var(--text-dim)', marginBottom: 6, fontWeight: 600 }}>Accesos de prueba:</p>
+            {hints[redirectTo].map(h => (
+              <div key={h.u} style={{ cursor: 'pointer', color: 'var(--primary-light)', marginBottom: 3 }} onClick={() => setForm({ username: h.u, password: h.p })}>
+                👤 {h.u} / {h.p}
+              </div>
+            ))}
+          </div>
+        )}
+        <div style={{ textAlign: 'center', marginTop: 20 }}>
+          <a href="#/" style={{ fontSize: 13, color: 'var(--text-dim)', textDecoration: 'none' }}>← Volver al inicio</a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// TOTEM PAGE
+// ============================================================
+function TotemPage({ socket }) {
+  const [services, setServices] = useState([]);
+  const [config, setConfig] = useState({});
+  const [issued, setIssued] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [queueInfo, setQueueInfo] = useState({});
+
+  useEffect(() => {
+    API.get('/api/monitor/state').then(d => {
+      setServices(d.services);
+      setConfig(d.config);
+      const qi = {};
+      d.services.forEach(s => { qi[s.id] = s.queueLength; });
+      setQueueInfo(qi);
+    });
+    if (!socket) return;
+    const onQueueUpdate = d => {
+      const qi = {};
+      (d.byService || []).forEach(s => { qi[s.serviceId] = s.waiting; });
+      setQueueInfo(qi);
+    };
+    const onInit = d => {
+      setServices(d.services.filter(s => s.active));
+      setConfig(d.config);
+    };
+    socket.on('queue:update', onQueueUpdate);
+    socket.on('init', onInit);
+    socket.on('config:update', setConfig);
+    return () => { socket.off('queue:update', onQueueUpdate); socket.off('init', onInit); socket.off('config:update', setConfig); };
+  }, [socket]);
+
+  const pickService = async svc => {
+    setLoading(true);
+    try {
+      const ticket = await API.post('/api/tickets', { serviceId: svc.id });
+      setIssued(ticket);
+      playSuccess();
+    } catch (e) { alert(e.message); }
+    finally { setLoading(false); }
+  };
+
+  const reset = () => setIssued(null);
+
+  if (issued) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#0A0A12', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24, padding: 40 }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 22, color: 'var(--text-muted)', marginBottom: 8 }}>Su número de turno es</div>
+          <div className="ticket-num pop-in" style={{ fontSize: 120, color: issued.serviceColor, lineHeight: 1, textShadow: `0 0 60px ${issued.serviceColor}66` }}>
+            {issued.number}
+          </div>
+          <div style={{ fontSize: 20, marginTop: 8, color: 'var(--text-muted)' }}>{issued.serviceName}</div>
+        </div>
+        <div style={{ display: 'flex', gap: 24 }}>
+          <div className="card" style={{ padding: '18px 28px', textAlign: 'center' }}>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>Posición en cola</div>
+            <div style={{ fontSize: 32, fontWeight: 800, fontFamily: 'JetBrains Mono' }}>#{issued.queuePosition}</div>
+          </div>
+          <div className="card" style={{ padding: '18px 28px', textAlign: 'center' }}>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>Espera estimada</div>
+            <div style={{ fontSize: 32, fontWeight: 800, fontFamily: 'JetBrains Mono' }}>~{issued.estimatedWait}<span style={{ fontSize: 16 }}> min</span></div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <Btn onClick={() => printTicket(issued, config)} variant="secondary" size="lg">🖨️ Imprimir ticket</Btn>
+          <Btn onClick={reset} variant="primary" size="lg">← Nuevo turno</Btn>
+        </div>
+        <p style={{ color: 'var(--text-dim)', fontSize: 14, textAlign: 'center', maxWidth: 400 }}>{config.ticketFooter || 'Conserve este ticket hasta ser atendido.'}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#0A0A12', display: 'flex', flexDirection: 'column', padding: 0 }}>
+      <div style={{ padding: '32px 40px 24px', textAlign: 'center', borderBottom: '1px solid var(--border)' }}>
+        <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: -0.5 }}>{config.businessName || 'TurnoFácil'}</div>
+        <div style={{ color: 'var(--text-muted)', marginTop: 4, fontSize: 15 }}>{config.welcomeMessage || '¡Bienvenido! Seleccione el servicio que necesita.'}</div>
+      </div>
+
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(services.length, 3)}, 1fr)`, gap: 20, width: '100%', maxWidth: 800 }}>
+          {services.map(svc => {
+            const q = queueInfo[svc.id] || 0;
+            return (
+              <div key={svc.id} className="totem-btn" onClick={() => !loading && pickService(svc)}
+                style={{
+                  background: `linear-gradient(145deg, ${svc.color}22, ${svc.color}11)`,
+                  border: `2px solid ${svc.color}44`, borderRadius: 18,
+                  padding: '36px 28px', textAlign: 'center',
+                  boxShadow: `0 8px 30px ${svc.color}22`,
+                  opacity: loading ? 0.7 : 1,
+                }}>
+                <div style={{ fontSize: 52, marginBottom: 14 }}>{svc.emoji}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 6 }}>{svc.name}</div>
+                <div style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 16 }}>{svc.description}</div>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 16 }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: svc.color, fontFamily: 'JetBrains Mono' }}>{q}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>en espera</div>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: svc.color, fontFamily: 'JetBrains Mono' }}>~{q * (svc.avgTime || 5)}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>min espera</div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div style={{ padding: '16px 40px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>Tótem de Autoservicio</span>
+        <Clock />
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// MONITOR PAGE
+// ============================================================
+function MonitorPage({ socket }) {
+  const [state, setState] = useState({ recentlyCalled: [], waiting: 0, services: [], config: {} });
+  const [flashId, setFlashId] = useState(null);
+  const [soundReady, setSoundReady] = useState(false);   // ¿el usuario ya hizo click?
+  const [soundEnabled, setSoundEnabled] = useState(true); // ¿quiere escuchar?
+
+  const handleUnlock = () => {
+    unlockAudio();
+    setSoundReady(true);
+  };
+
+  const toggleSound = e => {
+    e.stopPropagation();
+    setSoundEnabled(v => !v);
+  };
+
+  // Refs para evitar stale closures en los event handlers del socket
+  const soundReadyRef   = useRef(false);
+  const soundEnabledRef = useRef(true);
+  useEffect(() => { soundReadyRef.current   = soundReady;   }, [soundReady]);
+  useEffect(() => { soundEnabledRef.current = soundEnabled; }, [soundEnabled]);
+
+  // Fusiona la respuesta de la API con el estado local sin perder el historial del socket
+  const mergeState = useCallback((apiData) => {
+    setState(s => {
+      // Combinar y deduplicar por id, manteniendo el orden por calledAt desc
+      const combined = [...apiData.recentlyCalled];
+      s.recentlyCalled.forEach(local => {
+        if (!combined.find(a => a.id === local.id)) combined.push(local);
+      });
+      combined.sort((a, b) => new Date(b.calledAt || 0) - new Date(a.calledAt || 0));
+      return {
+        ...apiData,
+        recentlyCalled: combined.slice(0, 8),
+      };
+    });
+  }, []);
+
+  const refresh = async () => {
+    try {
+      const d = await API.get('/api/monitor/state');
+      mergeState(d);
+    } catch {}
+  };
+
+  useEffect(() => {
+    refresh();
+    const iv = setInterval(refresh, 5000);
+    if (!socket) return () => clearInterval(iv);
+
+    // Agrega o actualiza un ticket en la lista de recientes
+    const pushTicket = ticket => {
+      setState(s => {
+        // Actualizar si ya existe (p.ej. called → attending → completed)
+        const exists = s.recentlyCalled.find(t => t.id === ticket.id);
+        let newRecent;
+        if (exists) {
+          newRecent = s.recentlyCalled.map(t => t.id === ticket.id ? ticket : t);
+        } else {
+          newRecent = [ticket, ...s.recentlyCalled].slice(0, 8);
+        }
+        // Reordenar: activos (called/attending) primero, luego por calledAt desc
+        newRecent.sort((a, b) => {
+          const aActive = a.status === 'called' || a.status === 'attending';
+          const bActive = b.status === 'called' || b.status === 'attending';
+          if (aActive !== bActive) return aActive ? -1 : 1;
+          return new Date(b.calledAt || 0) - new Date(a.calledAt || 0);
+        });
+        return { ...s, recentlyCalled: newRecent };
+      });
+    };
+
+    const onCalled = ticket => {
+      pushTicket(ticket);
+      setFlashId(ticket.id);
+      setTimeout(() => setFlashId(null), 1200);
+      if (soundReadyRef.current && soundEnabledRef.current) playSuccess();
+    };
+
+    const onCompleted = ticket => pushTicket(ticket);
+
+    const onQueueUpdate = d => {
+      setState(s => ({
+        ...s,
+        waiting: d.tickets?.filter(t => t.status === 'waiting').length || 0,
+        services: s.services.map(svc => ({
+          ...svc,
+          queueLength: d.byService?.find(b => b.serviceId === svc.id)?.waiting ?? svc.queueLength,
+        })),
+      }));
+    };
+
+    const onInit = d => {
+      setState(s => ({ ...s, services: d.services.filter(sv => sv.active), config: d.config }));
+    };
+
+    socket.on('ticket:called',    onCalled);
+    socket.on('ticket:attending', onCalled);
+    socket.on('ticket:completed', onCompleted);
+    socket.on('ticket:skipped',   onCompleted);
+    socket.on('queue:update',     onQueueUpdate);
+    socket.on('init',             onInit);
+    socket.on('config:update',    c => setState(s => ({ ...s, config: c })));
+    return () => {
+      clearInterval(iv);
+      socket.off('ticket:called',    onCalled);
+      socket.off('ticket:attending', onCalled);
+      socket.off('ticket:completed', onCompleted);
+      socket.off('ticket:skipped',   onCompleted);
+      socket.off('queue:update',     onQueueUpdate);
+      socket.off('init',             onInit);
+    };
+  }, [socket]);
+
+  // Solo mostrar en el panel principal si hay un turno activo ahora mismo
+  const main = state.recentlyCalled.find(
+    t => t.status === 'called' || t.status === 'attending'
+  ) || null;
+  const rest = state.recentlyCalled.filter(t => t.id !== main?.id).slice(0, 6);
+
+  // Mapas de estado → etiqueta y color
+  const STATUS_LABEL = {
+    waiting:    'En Espera',
+    called:     '📢 Llamando',
+    attending:  '▶ En Atención',
+    completed:  '✓ Atendido',
+    skipped:    '✕ Ausente',
+    redirected: '↪ Derivado',
+  };
+  const STATUS_COLOR = {
+    waiting:    '#F59E0B',
+    called:     '#60A5FA',
+    attending:  '#10B981',
+    completed:  '#6B7280',
+    skipped:    '#EF4444',
+    redirected: '#8B5CF6',
+  };
+
+  return (
+    <div onClick={!soundReady ? handleUnlock : undefined}
+      style={{ minHeight: '100vh', background: '#07070E', display: 'flex', flexDirection: 'column', overflow: 'hidden', cursor: !soundReady ? 'pointer' : 'default' }}>
+
+      {/* Overlay de activación de sonido */}
+      {!soundReady && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 100,
+          background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16,
+        }}>
+          <div style={{ fontSize: 56 }}>🔊</div>
+          <div style={{ fontSize: 22, fontWeight: 800 }}>Toque para activar el sonido</div>
+          <div style={{ fontSize: 14, color: 'var(--text-muted)' }}>El navegador requiere interacción antes de reproducir audio</div>
+          <div style={{ marginTop: 8, padding: '12px 32px', background: 'var(--primary)', borderRadius: 10, fontSize: 15, fontWeight: 700 }}>Activar monitor</div>
+        </div>
+      )}
+
+      {/* Header */}
+      <div style={{ padding: '20px 40px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#0A0A14' }}>
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 800 }}>{state.config.businessName || 'TurnoFácil'}</div>
+          <div style={{ fontSize: 13, color: 'var(--text-dim)' }}>{state.config.monitorTitle || 'TURNO EN ATENCIÓN'}</div>
+        </div>
+        <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
+          {state.services.map(s => {
+            const calledTicket = state.recentlyCalled.find(
+              t => t.serviceId === s.id && (t.status === 'called' || t.status === 'attending')
+            );
+            const queueLen = typeof s.queueLength === 'number' ? s.queueLength : 0;
+            return (
+              <div key={s.id} style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 2 }}>{s.name}</div>
+                {calledTicket && (
+                  <div style={{ fontSize: 12, fontFamily: 'JetBrains Mono', fontWeight: 800, color: s.color, marginBottom: 1 }}>
+                    ▶ {calledTicket.number}
+                  </div>
+                )}
+                <div style={{ fontSize: 16, fontWeight: 700, color: s.color, fontFamily: 'JetBrains Mono' }}>
+                  {queueLen}
+                  <span style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 2 }}>en espera</span>
+                </div>
+              </div>
+            );
+          })}
+          {soundReady && (
+            <button onClick={toggleSound} title={soundEnabled ? 'Silenciar' : 'Activar sonido'}
+              style={{ background: soundEnabled ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.06)', border: `1px solid ${soundEnabled ? '#7C3AED55' : '#ffffff20'}`, color: soundEnabled ? '#A78BFA' : 'var(--text-dim)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>
+              {soundEnabled ? '🔊' : '🔇'}
+            </button>
+          )}
+          <Clock large />
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div style={{ flex: 1, display: 'flex', gap: 0 }}>
+        {/* Panel principal — solo turno ACTIVO */}
+        <div style={{ flex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 40, borderRight: '1px solid var(--border)' }}>
+          {main ? (
+            <div key={main.id} className="pop-in" style={{ textAlign: 'center' }}>
+              {/* Badge de estado del turno activo */}
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 16,
+                background: STATUS_COLOR[main.status] + '22',
+                border: `1px solid ${STATUS_COLOR[main.status]}55`,
+                borderRadius: 30, padding: '6px 20px',
+              }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: STATUS_COLOR[main.status], display: 'inline-block',
+                  boxShadow: `0 0 8px ${STATUS_COLOR[main.status]}`,
+                  animation: main.status === 'called' ? 'pulseGlow 1.2s ease-in-out infinite' : 'none',
+                }} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: STATUS_COLOR[main.status], letterSpacing: 1, textTransform: 'uppercase' }}>
+                  {STATUS_LABEL[main.status] || main.status}
+                </span>
+              </div>
+
+              <div className="ticket-num" style={{ fontSize: 'clamp(80px, 16vw, 160px)', color: main.serviceColor, lineHeight: 1, textShadow: `0 0 80px ${main.serviceColor}55`, marginBottom: 8 }}>
+                {main.number}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 12 }}>
+                <span style={{ fontSize: 24 }}>{main.serviceEmoji}</span>
+                <span style={{ fontSize: 22, fontWeight: 700 }}>{main.serviceName}</span>
+              </div>
+              {main.stationName && (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: main.serviceColor + '20', border: `1px solid ${main.serviceColor}40`, borderRadius: 30, padding: '8px 22px' }}>
+                  <span style={{ fontSize: 16, color: 'var(--text-muted)' }}>📍</span>
+                  <span style={{ fontSize: 18, fontWeight: 700, color: main.serviceColor }}>{main.stationName}</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 60, marginBottom: 16, opacity: 0.2 }}>🎫</div>
+              <div style={{ fontSize: 22, color: 'var(--text-dim)', fontWeight: 600 }}>Sin turnos en atención</div>
+              <div style={{ fontSize: 14, color: 'var(--text-dim)', marginTop: 8, opacity: 0.6 }}>
+                {state.waiting > 0 ? `${state.waiting} turno(s) esperando ser llamados` : 'Sistema en espera'}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Columna historial */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '28px 24px', gap: 10, overflowY: 'auto' }}>
+          <div style={{ fontSize: 12, color: 'var(--text-dim)', letterSpacing: 2, marginBottom: 4, textTransform: 'uppercase', fontWeight: 700 }}>Últimos llamados</div>
+          {rest.map(t => {
+            const stColor = STATUS_COLOR[t.status] || 'var(--text-dim)';
+            const stLabel = STATUS_LABEL[t.status] || t.status;
+            const isActive = t.status === 'called' || t.status === 'attending';
+            return (
+              <div key={t.id} className="card" style={{
+                padding: '11px 14px', display: 'flex', alignItems: 'center', gap: 11,
+                borderLeft: `3px solid ${stColor}`,
+                opacity: isActive ? 1 : 0.6,
+              }}>
+                <span style={{ fontSize: 18 }}>{t.serviceEmoji}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="ticket-num" style={{ fontSize: 24, color: isActive ? t.serviceColor : 'var(--text-muted)', lineHeight: 1 }}>{t.number}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {t.stationName || t.serviceName}
+                  </div>
+                </div>
+                <div style={{ fontSize: 10, textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ color: stColor, fontWeight: 700, marginBottom: 2 }}>{stLabel}</div>
+                  <div style={{ color: 'var(--text-dim)' }}>
+                    {t.calledAt ? new Date(t.calledAt).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' }) : ''}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          {rest.length === 0 && (
+            <div style={{ color: 'var(--text-dim)', fontSize: 13, marginTop: 8 }}>Sin historial aún</div>
+          )}
+
+          {/* Cola por servicio */}
+          <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+            <div style={{ fontSize: 12, color: 'var(--text-dim)', letterSpacing: 2, marginBottom: 10, textTransform: 'uppercase', fontWeight: 700 }}>Cola por servicio</div>
+            {state.services.map(s => (
+              <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span>{s.emoji}</span>
+                  <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{s.name}</span>
+                </div>
+                <span className="ticket-num" style={{ fontSize: 18, color: s.color }}>{s.queueLength || 0}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Footer ticker */}
+      <div style={{ background: 'var(--primary)', padding: '10px 0', overflow: 'hidden', position: 'relative' }}>
+        <div className="ticker-text" style={{ fontSize: 14, fontWeight: 600, paddingLeft: '100%' }}>
+          {state.config.footerMessage || 'Gracias por su espera. Lo atenderemos en breve.'}&nbsp;&nbsp;&nbsp;·&nbsp;&nbsp;&nbsp;{state.waiting} turno(s) en espera&nbsp;&nbsp;&nbsp;·&nbsp;&nbsp;&nbsp;{state.config.businessName || 'TurnoFácil'}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// TICKET HISTORY MODAL
+// ============================================================
+function TicketHistoryModal({ open, onClose, agentId }) {
+  const [data, setData]       = useState({ items: [], total: 0, page: 1, totalPages: 1 });
+  const [page, setPage]       = useState(1);
+  const [date, setDate]       = useState(new Date().toISOString().slice(0, 10));
+  const [status, setStatus]   = useState('');
+  const [search, setSearch]   = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const load = useCallback(async (p = 1) => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ page: p, perPage: 15 });
+      if (date)   params.set('date', date);
+      if (status) params.set('status', status);
+      if (search) params.set('search', search);
+      const d = await API.get(`/api/agent/history?${params}`);
+      setData(d); setPage(p);
+    } catch {}
+    finally { setLoading(false); }
+  }, [date, status, search]);
+
+  useEffect(() => { if (open) load(1); }, [open, load]);
+
+  const STATUS_LABEL = { waiting:'En Espera', called:'Llamando', attending:'En Atención', completed:'Atendido', skipped:'Ausente', redirected:'Derivado' };
+  const STATUS_COLOR = { waiting:'#F59E0B', called:'#60A5FA', attending:'#10B981', completed:'#6B7280', skipped:'#EF4444', redirected:'#8B5CF6' };
+
+  function dur(a, b) {
+    if (!a || !b) return '—';
+    const s = Math.round((new Date(b) - new Date(a)) / 1000);
+    if (s < 60) return `${s}s`;
+    return `${Math.floor(s/60)}m ${s%60}s`;
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="📋 Historial de Tickets" size="xl">
+      {/* Filters */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
+        <div style={{ flex: '1 1 140px' }}>
+          <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 5, fontWeight: 600 }}>Fecha</label>
+          <input type="date" className="tf-input" value={date} onChange={e => setDate(e.target.value)} style={{ width: '100%' }} />
+        </div>
+        <div style={{ flex: '1 1 140px' }}>
+          <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 5, fontWeight: 600 }}>Estado</label>
+          <select className="tf-select" value={status} onChange={e => setStatus(e.target.value)} style={{ width: '100%' }}>
+            <option value="">Todos</option>
+            {Object.entries(STATUS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+        </div>
+        <div style={{ flex: '2 1 180px' }}>
+          <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 5, fontWeight: 600 }}>Buscar número / servicio</label>
+          <input className="tf-input" placeholder="Ej: C001, Caja..." value={search}
+            onChange={e => setSearch(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && load(1)}
+            style={{ width: '100%' }} />
+        </div>
+        <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'flex-end' }}>
+          <Btn onClick={() => load(1)} variant="primary" disabled={loading}>
+            {loading ? <Spinner size={14} /> : '🔍 Buscar'}
+          </Btn>
+        </div>
+      </div>
+
+      {/* Summary bar */}
+      <div style={{ display: 'flex', gap: 16, marginBottom: 14, fontSize: 13, color: 'var(--text-muted)' }}>
+        <span>Total: <strong style={{ color: 'var(--text)' }}>{data.total}</strong></span>
+        <span>Página <strong style={{ color: 'var(--text)' }}>{data.page}</strong> de <strong style={{ color: 'var(--text)' }}>{data.totalPages}</strong></span>
+      </div>
+
+      {/* Table */}
+      <div style={{ overflowX: 'auto', borderRadius: 10, border: '1px solid var(--border)' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <thead>
+            <tr style={{ background: 'var(--bg-card2)', fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              {['Ticket', 'Servicio', 'Ventanilla', 'Estado', 'Emitido', 'Llamado', 'Atención', 'Finalizado', 'T. Espera', 'T. Atención'].map(h => (
+                <th key={h} style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 700, whiteSpace: 'nowrap' }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.items.length === 0 && (
+              <tr><td colSpan={10} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-dim)' }}>
+                {loading ? <Spinner size={20} /> : 'Sin resultados para los filtros seleccionados'}
+              </td></tr>
+            )}
+            {data.items.map(t => (
+              <tr key={t.id} className="tr-hover" style={{ borderTop: '1px solid var(--border)' }}>
+                <td style={{ padding: '10px 12px' }}>
+                  <span className="ticket-num" style={{ fontSize: 16, color: t.serviceColor }}>{t.number}</span>
+                </td>
+                <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>
+                  <span>{t.serviceEmoji} {t.serviceName}</span>
+                </td>
+                <td style={{ padding: '10px 12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                  {t.stationName || '—'}
+                </td>
+                <td style={{ padding: '10px 12px' }}>
+                  <span className="badge" style={{ background: (STATUS_COLOR[t.status] || '#888') + '22', color: STATUS_COLOR[t.status] || '#888' }}>
+                    {STATUS_LABEL[t.status] || t.status}
+                  </span>
+                </td>
+                <td style={{ padding: '10px 12px', color: 'var(--text-muted)', whiteSpace: 'nowrap', fontFamily: 'JetBrains Mono', fontSize: 12 }}>
+                  {t.createdAt ? new Date(t.createdAt).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—'}
+                </td>
+                <td style={{ padding: '10px 12px', color: 'var(--text-muted)', whiteSpace: 'nowrap', fontFamily: 'JetBrains Mono', fontSize: 12 }}>
+                  {t.calledAt ? new Date(t.calledAt).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—'}
+                </td>
+                <td style={{ padding: '10px 12px', color: 'var(--text-muted)', whiteSpace: 'nowrap', fontFamily: 'JetBrains Mono', fontSize: 12 }}>
+                  {t.attendedAt ? new Date(t.attendedAt).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—'}
+                </td>
+                <td style={{ padding: '10px 12px', color: 'var(--text-muted)', whiteSpace: 'nowrap', fontFamily: 'JetBrains Mono', fontSize: 12 }}>
+                  {t.completedAt ? new Date(t.completedAt).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—'}
+                </td>
+                <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', fontFamily: 'JetBrains Mono', fontSize: 12, color: '#60A5FA' }}>
+                  {dur(t.createdAt, t.calledAt)}
+                </td>
+                <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', fontFamily: 'JetBrains Mono', fontSize: 12, color: '#10B981' }}>
+                  {dur(t.attendedAt, t.completedAt)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination */}
+      {data.totalPages > 1 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 16 }}>
+          <Btn onClick={() => load(1)}         variant="secondary" size="sm" disabled={page === 1 || loading}>«</Btn>
+          <Btn onClick={() => load(page - 1)}  variant="secondary" size="sm" disabled={page === 1 || loading}>‹</Btn>
+          {Array.from({ length: Math.min(7, data.totalPages) }, (_, i) => {
+            let p;
+            if (data.totalPages <= 7) p = i + 1;
+            else if (page <= 4) p = i + 1;
+            else if (page >= data.totalPages - 3) p = data.totalPages - 6 + i;
+            else p = page - 3 + i;
+            return (
+              <button key={p} onClick={() => load(p)} disabled={loading}
+                style={{ width: 34, height: 34, borderRadius: 7, border: '1px solid var(--border-light)', fontWeight: p === page ? 800 : 400,
+                  background: p === page ? 'var(--primary)' : 'var(--bg-card2)', color: p === page ? '#fff' : 'var(--text-muted)',
+                  cursor: 'pointer', fontFamily: 'JetBrains Mono', fontSize: 13 }}>
+                {p}
+              </button>
+            );
+          })}
+          <Btn onClick={() => load(page + 1)}         variant="secondary" size="sm" disabled={page === data.totalPages || loading}>›</Btn>
+          <Btn onClick={() => load(data.totalPages)}  variant="secondary" size="sm" disabled={page === data.totalPages || loading}>»</Btn>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+// ============================================================
+// AGENT PAGE
+// ============================================================
+function AgentPage({ user, socket, onLogout }) {
+  const [agentState, setAgentState] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [showRedirect, setShowRedirect] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [selectedService, setSelectedService] = useState('');
+  const toast = useToast();
+
+  const refresh = useCallback(async () => {
+    try {
+      const d = await API.get('/api/agent/state');
+      setAgentState(d);
+    } catch (e) { toast(e.message, 'error'); }
+  }, []);
+
+  useEffect(() => {
+    refresh();
+    const iv = setInterval(refresh, 8000);
+    if (!socket) return () => clearInterval(iv);
+
+    const onQueueUpdate = () => refresh();
+    socket.on('queue:update', onQueueUpdate);
+    socket.on('ticket:called', refresh);
+    return () => {
+      clearInterval(iv);
+      socket.off('queue:update', onQueueUpdate);
+      socket.off('ticket:called', refresh);
+    };
+  }, [socket, refresh]);
+
+  const act = async (action, id, extra = {}) => {
+    setLoading(true);
+    try {
+      if (action === 'call-next') await API.post('/api/tickets/call-next', {});
+      else await API.post(`/api/tickets/${id}/${action}`, extra);
+      await refresh();
+      const msgs = {
+        'call-next': 'Turno llamado', recall: 'Re-llamando...', attend: 'Atención iniciada',
+        complete: 'Turno finalizado ✓', skip: 'Turno saltado', redirect: 'Turno derivado',
+      };
+      toast(msgs[action] || 'OK', action === 'skip' ? 'warning' : 'success');
+    } catch (e) { toast(e.message, 'error'); }
+    finally { setLoading(false); }
+  };
+
+  const handleRedirect = async () => {
+    if (!selectedService) return;
+    await act('redirect', agentState.currentTicket.id, { targetServiceId: selectedService });
+    setShowRedirect(false); setSelectedService('');
+  };
+
+  if (!agentState) return (
+    <div style={{ minHeight: '100vh', background: 'var(--bg-base)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
+      <Spinner size={36} />
+      <p style={{ color: 'var(--text-muted)' }}>Cargando estado del agente...</p>
+    </div>
+  );
+
+  const ct = agentState.currentTicket;
+  const statusColors = { waiting: '#F59E0B', called: '#3B82F6', attending: '#10B981', completed: '#6366F1', skipped: '#EF4444' };
+  const statusLabels = { waiting: 'En espera', called: 'Llamado', attending: 'En atención', completed: 'Finalizado', skipped: 'Ausente' };
+
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--bg-base)', display: 'flex', flexDirection: 'column' }}>
+      {/* Header */}
+      <div style={{ background: 'var(--bg-dark)', borderBottom: '1px solid var(--border)', padding: '14px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
+            {user.name[0]}
+          </div>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>{user.name}</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>📍 {agentState.station?.name}</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Atendidos hoy</div>
+            <div style={{ fontWeight: 800, fontSize: 20, fontFamily: 'JetBrains Mono', color: '#10B981' }}>{agentState.todayCompleted}</div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Tiempo prom.</div>
+            <div style={{ fontWeight: 800, fontSize: 20, fontFamily: 'JetBrains Mono', color: '#F59E0B' }}>{agentState.avgTime}s</div>
+          </div>
+          <Btn onClick={() => setShowHistory(true)} variant="secondary" size="sm">📋 Historial</Btn>
+          <Btn onClick={onLogout} variant="ghost" size="sm">Salir →</Btn>
+          <ThemeToggleBtn />
+        </div>
+      </div>
+
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 340px', gap: 0, maxHeight: 'calc(100vh - 66px)', overflow: 'hidden' }}>
+        {/* Main work area */}
+        <div style={{ padding: 28, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* Current ticket */}
+          <div className="card" style={{ padding: 28, borderTop: `3px solid ${ct ? (ct.serviceColor || 'var(--primary)') : 'var(--border)'}` }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: 2, marginBottom: 16, textTransform: 'uppercase' }}>Turno Actual</div>
+            {ct ? (
+              <>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 20, marginBottom: 20 }}>
+                  <div className="ticket-num" style={{ fontSize: 72, color: ct.serviceColor, lineHeight: 1, textShadow: `0 0 30px ${ct.serviceColor}44` }}>{ct.number}</div>
+                  <div style={{ marginBottom: 8 }}>
+                    <div style={{ fontSize: 18, fontWeight: 700 }}>{ct.serviceName}</div>
+                    <Badge color={statusColors[ct.status]}>{statusLabels[ct.status]}</Badge>
+                  </div>
+                </div>
+                {ct.calledAt && (
+                  <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16 }}>
+                    🕐 Llamado: {new Date(ct.calledAt).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    {ct.attendedAt && <>&nbsp;&nbsp;·&nbsp;&nbsp;Atención: {new Date(ct.attendedAt).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</>}
+                  </div>
+                )}
+                {/* Action buttons */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                  {ct.status === 'called' && (
+                    <>
+                      <Btn onClick={() => act('attend', ct.id)} variant="success" size="lg" disabled={loading}>▶ Iniciar Atención</Btn>
+                      <Btn onClick={() => act('recall', ct.id)} variant="info" size="lg" disabled={loading}>🔊 Re-llamar</Btn>
+                      <Btn onClick={() => act('skip', ct.id)} variant="warning" size="lg" disabled={loading}>⏭ Ausente</Btn>
+                      <Btn onClick={() => setShowRedirect(true)} variant="secondary" size="lg" disabled={loading}>↪ Derivar</Btn>
+                    </>
+                  )}
+                  {ct.status === 'attending' && (
+                    <>
+                      <Btn onClick={() => act('complete', ct.id)} variant="success" size="lg" disabled={loading}>✓ Finalizar</Btn>
+                      <Btn onClick={() => setShowRedirect(true)} variant="secondary" size="lg" disabled={loading}>↪ Derivar</Btn>
+                    </>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-dim)' }}>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>🕐</div>
+                <div style={{ fontSize: 16, marginBottom: 6 }}>Sin turno activo</div>
+                <div style={{ fontSize: 14, color: 'var(--text-dim)' }}>{agentState.queue.length} en espera para tu ventanilla</div>
+              </div>
+            )}
+          </div>
+
+          {/* Call next button */}
+          <Btn onClick={() => act('call-next')} variant="primary" size="xl" full disabled={loading || agentState.queue.length === 0}
+            style={{ fontSize: 18, padding: '18px', borderRadius: 12 }}>
+            {loading ? <Spinner size={22} /> : <>📢 Llamar Siguiente &nbsp;<Badge color="#fff" style={{ color: 'var(--primary)' }}>{agentState.queue.length}</Badge></>}
+          </Btn>
+
+          {/* Stats row */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
+            <StatCard label="En espera" value={agentState.queue.length} icon="⏳" color="#F59E0B" />
+            <StatCard label="Atendidos hoy" value={agentState.todayCompleted} icon="✅" color="#10B981" />
+            <StatCard label="Tiempo prom." value={`${agentState.avgTime}s`} icon="⏱" color="#60A5FA" />
+          </div>
+        </div>
+
+        {/* Queue sidebar */}
+        <div style={{ borderLeft: '1px solid var(--border)', padding: 20, overflowY: 'auto', background: 'var(--bg-dark)' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: 2, marginBottom: 14, textTransform: 'uppercase', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>Cola de Espera</span>
+            <span style={{ fontFamily: 'JetBrains Mono', fontSize: 14, color: 'var(--primary-light)' }}>{agentState.queue.length}</span>
+          </div>
+          {agentState.queue.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-dim)' }}>
+              <div style={{ fontSize: 30, marginBottom: 8 }}>🎉</div>
+              <div>Cola vacía</div>
+            </div>
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {agentState.queue.map((t, i) => (
+              <div key={t.id} className="card2" style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, borderLeft: `3px solid ${t.serviceColor}` }}>
+                <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-dim)', minWidth: 22, textAlign: 'center' }}>#{i + 1}</span>
+                <div style={{ flex: 1 }}>
+                  <div className="ticket-num" style={{ fontSize: 20, color: t.serviceColor, lineHeight: 1 }}>{t.number}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{t.serviceName}</div>
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text-dim)', textAlign: 'right' }}>
+                  {new Date(t.createdAt).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Redirect modal */}
+      <Modal open={showRedirect} onClose={() => setShowRedirect(false)} title="↪ Derivar Turno" size="sm">
+        <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 16 }}>Selecciona el servicio destino:</p>
+        <FormField label="Servicio destino">
+          <select className="tf-select" style={{ width: '100%' }} value={selectedService} onChange={e => setSelectedService(e.target.value)}>
+            <option value="">— Seleccionar —</option>
+            {agentState.services.filter(s => s.id !== ct?.serviceId).map(s => (
+              <option key={s.id} value={s.id}>{s.emoji} {s.name}</option>
+            ))}
+          </select>
+        </FormField>
+        <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+          <Btn onClick={() => setShowRedirect(false)} variant="secondary" full>Cancelar</Btn>
+          <Btn onClick={handleRedirect} variant="primary" full disabled={!selectedService || loading}>Derivar</Btn>
+        </div>
+      </Modal>
+
+      {/* History modal */}
+      <TicketHistoryModal open={showHistory} onClose={() => setShowHistory(false)} agentId={user.id} />
+    </div>
+  );
+}
+
+// ============================================================
+// ADMIN PAGE
+// ============================================================
+function AdminPage({ user, socket, onLogout }) {
+  const [tab, setTab] = useState('dashboard');
+  const toast = useToast();
+
+  const navItems = [
+    { id: 'dashboard', label: 'Dashboard',    emoji: '📊' },
+    { id: 'history',   label: 'Historial',    emoji: '📋' },
+    { id: 'users',     label: 'Usuarios',      emoji: '👥', hide: user.role !== 'admin' && user.role !== 'gerente' },
+    { id: 'services',  label: 'Servicios',     emoji: '⚡' },
+    { id: 'stations',  label: 'Ventanillas',   emoji: '🏢' },
+    { id: 'config',    label: 'Configuración', emoji: '⚙️', hide: user.role !== 'admin' },
+  ].filter(n => !n.hide);
+
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', background: 'var(--bg-base)' }}>
+      {/* Sidebar */}
+      <div style={{ width: 220, background: 'var(--bg-dark)', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', padding: '24px 12px', flexShrink: 0 }}>
+        <div style={{ padding: '0 10px 24px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ fontSize: 18, fontWeight: 800 }}>TurnoFácil</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14 }}>
+            <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800 }}>{user.name[0]}</div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>{user.name}</div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'capitalize' }}>{user.role}</div>
+            </div>
+          </div>
+        </div>
+        <nav style={{ flex: 1, marginTop: 16, display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {navItems.map(n => (
+            <div key={n.id} className={`nav-item ${tab === n.id ? 'active' : ''}`} onClick={() => setTab(n.id)}
+              style={{ padding: '10px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, fontWeight: tab === n.id ? 700 : 500 }}>
+              <span>{n.emoji}</span> {n.label}
+            </div>
+          ))}
+        </nav>
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {[
+            { href: '#/monitor', label: '📺 Monitor' },
+            { href: '#/totem',   label: '🏧 Tótem'   },
+            { href: '#/agent',   label: '💼 Agente'  },
+          ].map(l => (
+            <a key={l.href} href={l.href} target="_blank" style={{ padding: '7px 12px', fontSize: 13, color: 'var(--text-dim)', textDecoration: 'none', borderRadius: 6 }}
+              onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}>
+              {l.label} ↗
+            </a>
+          ))}
+          <button onClick={onLogout} style={{ background: 'none', border: 'none', padding: '7px 12px', fontSize: 13, color: '#EF4444', cursor: 'pointer', textAlign: 'left', borderRadius: 6, fontFamily: 'Outfit' }}>⬅ Cerrar sesión</button>
+          <div style={{ padding: '7px 12px' }}><ThemeToggleBtn style={{ width: '100%', justifyContent: 'flex-start' }} /></div>
+        </div>
+      </div>
+
+      {/* Main area */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: 28 }}>
+        {tab === 'dashboard' && <AdminDashboard user={user} socket={socket} toast={toast} />}
+        {tab === 'history'   && <AdminHistory toast={toast} />}
+        {tab === 'users'     && <AdminUsers user={user} toast={toast} />}
+        {tab === 'services'  && <AdminServices user={user} toast={toast} />}
+        {tab === 'stations'  && <AdminStations user={user} toast={toast} />}
+        {tab === 'config'    && <AdminConfig toast={toast} />}
+      </div>
+    </div>
+  );
+}
+
+// --- Admin: Dashboard ---
+function AdminDashboard({ user, socket, toast }) {
+  const [stats, setStats] = useState(null);
+
+  const refresh = useCallback(async () => {
+    try { setStats(await API.get('/api/stats')); } catch {}
+  }, []);
+
+  useEffect(() => {
+    refresh();
+    const iv = setInterval(refresh, 10000);
+    if (socket) {
+      socket.on('queue:update', refresh);
+      return () => { clearInterval(iv); socket.off('queue:update', refresh); };
+    }
+    return () => clearInterval(iv);
+  }, [socket, refresh]);
+
+  const resetQueue = async () => {
+    if (!confirm('¿Cerrar todos los turnos activos?')) return;
+    try { await API.post('/api/admin/reset-queue', {}); toast('Cola reiniciada', 'success'); refresh(); }
+    catch (e) { toast(e.message, 'error'); }
+  };
+  const resetCounters = async () => {
+    if (!confirm('¿Reiniciar contadores a 000?')) return;
+    try { await API.post('/api/admin/reset-counters', {}); toast('Contadores reiniciados', 'success'); }
+    catch (e) { toast(e.message, 'error'); }
+  };
+
+  if (!stats) return <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--text-muted)' }}><Spinner /> Cargando...</div>;
+
+  const maxH = Math.max(...stats.byHour.map(h => h.count), 1);
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+        <div>
+          <h2 style={{ fontSize: 24, fontWeight: 800, margin: 0 }}>Dashboard</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: '4px 0 0' }}>Resumen del día — {new Date().toLocaleDateString('es-PY', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+        </div>
+        {(user.role === 'admin' || user.role === 'gerente') && (
+          <div style={{ display: 'flex', gap: 10 }}>
+            <Btn onClick={resetCounters} variant="secondary" size="sm">↺ Reiniciar contadores</Btn>
+            <Btn onClick={resetQueue} variant="danger" size="sm">⚡ Limpiar cola</Btn>
+          </div>
+        )}
+      </div>
+
+      {/* KPI Row */}
+      <div style={{ display: 'flex', gap: 14, marginBottom: 24, flexWrap: 'wrap' }}>
+        <StatCard label="Total de turnos" value={stats.total} icon="🎫" color="#A78BFA" />
+        <StatCard label="En espera" value={stats.waiting} icon="⏳" color="#F59E0B" />
+        <StatCard label="En atención" value={stats.attending} icon="💼" color="#3B82F6" />
+        <StatCard label="Completados" value={stats.completed} icon="✅" color="#10B981" />
+        <StatCard label="Ausentes" value={stats.skipped} icon="❌" color="#EF4444" />
+        <StatCard label="T. atención prom." value={`${stats.avgAttTime}m`} icon="⏱" color="#60A5FA" />
+        <StatCard label="T. espera prom." value={`${stats.avgWaitTime}m`} icon="🕐" color="#34D399" />
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+        {/* By service */}
+        <div className="card" style={{ padding: 22 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 18, marginTop: 0 }}>📊 Turnos por Servicio</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {stats.byService.map(s => (
+              <div key={s.id}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5, fontSize: 13 }}>
+                  <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}><span>{s.emoji}</span>{s.name}</span>
+                  <span style={{ fontFamily: 'JetBrains Mono', fontWeight: 700, color: s.color }}>{s.total}</span>
+                </div>
+                <div style={{ height: 6, background: 'var(--bg-card2)', borderRadius: 99, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${stats.total ? (s.total / stats.total * 100) : 0}%`, background: s.color, borderRadius: 99, transition: 'width 0.5s ease' }} />
+                </div>
+                <div style={{ display: 'flex', gap: 10, marginTop: 4, fontSize: 11, color: 'var(--text-dim)' }}>
+                  <span style={{ color: '#10B981' }}>✓ {s.completed}</span>
+                  <span style={{ color: '#EF4444' }}>✕ {s.skipped}</span>
+                  <span style={{ color: '#F59E0B' }}>⏳ {s.waiting}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* By agent */}
+        <div className="card" style={{ padding: 22 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 18, marginTop: 0 }}>👤 Rendimiento de Agentes</h3>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ fontSize: 11, color: 'var(--text-dim)', textTransform: 'uppercase' }}>
+                <th style={{ textAlign: 'left', padding: '0 0 10px', fontWeight: 700 }}>Agente</th>
+                <th style={{ textAlign: 'right', padding: '0 0 10px', fontWeight: 700 }}>Atendidos</th>
+                <th style={{ textAlign: 'right', padding: '0 0 10px', fontWeight: 700 }}>Ausentes</th>
+                <th style={{ textAlign: 'right', padding: '0 0 10px', fontWeight: 700 }}>T. prom.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stats.byAgent.map(a => (
+                <tr key={a.id} className="tr-hover" style={{ borderTop: '1px solid var(--border)', fontSize: 13 }}>
+                  <td style={{ padding: '10px 0', fontWeight: 500 }}>{a.name}</td>
+                  <td style={{ textAlign: 'right', color: '#10B981', fontFamily: 'JetBrains Mono' }}>{a.completed}</td>
+                  <td style={{ textAlign: 'right', color: '#EF4444', fontFamily: 'JetBrains Mono' }}>{a.skipped}</td>
+                  <td style={{ textAlign: 'right', color: '#60A5FA', fontFamily: 'JetBrains Mono' }}>{a.avgTime}m</td>
+                </tr>
+              ))}
+              {stats.byAgent.length === 0 && <tr><td colSpan={4} style={{ color: 'var(--text-dim)', padding: '14px 0', fontSize: 13 }}>Sin datos aún</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* By hour chart */}
+      <div className="card" style={{ padding: 22 }}>
+        <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 18, marginTop: 0 }}>📈 Turnos por Hora</h3>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 80 }}>
+          {stats.byHour.map(h => (
+            <div key={h.hour} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+              <div style={{ width: '100%', background: 'var(--primary)', borderRadius: '3px 3px 0 0', height: `${(h.count / maxH) * 64}px`, minHeight: h.count > 0 ? 4 : 0, opacity: 0.8, transition: 'height 0.3s' }} />
+              <div style={{ fontSize: 9, color: 'var(--text-dim)' }}>{h.label}</div>
+            </div>
+          ))}
+          {stats.byHour.length === 0 && <div style={{ color: 'var(--text-dim)', fontSize: 13 }}>Sin datos registrados hoy</div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Admin: History (full page, all tickets) ---
+function AdminHistory({ toast }) {
+  const [data, setData]       = useState({ items: [], total: 0, page: 1, totalPages: 1 });
+  const [page, setPage]       = useState(1);
+  const [date, setDate]       = useState(new Date().toISOString().slice(0, 10));
+  const [status, setStatus]   = useState('');
+  const [search, setSearch]   = useState('');
+  const [agents, setAgents]   = useState([]);
+  const [agentId, setAgentId] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const STATUS_LABEL = { waiting:'En Espera', called:'Llamando', attending:'En Atención', completed:'Atendido', skipped:'Ausente', redirected:'Derivado' };
+  const STATUS_COLOR = { waiting:'#F59E0B', called:'#60A5FA', attending:'#10B981', completed:'#6B7280', skipped:'#EF4444', redirected:'#8B5CF6' };
+
+  useEffect(() => {
+    API.get('/api/users').then(u => setAgents(u.filter(x => x.role === 'agente'))).catch(() => {});
+  }, []);
+
+  const load = useCallback(async (p = 1) => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ page: p, perPage: 20 });
+      if (date)    params.set('date', date);
+      if (status)  params.set('status', status);
+      if (search)  params.set('search', search);
+      if (agentId) params.set('agentId', agentId);
+      const d = await API.get(`/api/agent/history?${params}`);
+      setData(d); setPage(p);
+    } catch (e) { toast(e.message, 'error'); }
+    finally { setLoading(false); }
+  }, [date, status, search, agentId]);
+
+  useEffect(() => { load(1); }, [load]);
+
+  function dur(a, b) {
+    if (!a || !b) return '—';
+    const s = Math.round((new Date(b) - new Date(a)) / 1000);
+    if (s < 60) return `${s}s`;
+    return `${Math.floor(s/60)}m ${s%60}s`;
+  }
+
+  return (
+    <div>
+      <div style={{ marginBottom: 24 }}>
+        <h2 style={{ fontSize: 24, fontWeight: 800, margin: 0 }}>📋 Historial de Tickets</h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: '4px 0 0' }}>Todos los tickets del sistema con filtros avanzados</p>
+      </div>
+
+      {/* Filters */}
+      <div className="card" style={{ padding: 18, marginBottom: 20 }}>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div style={{ flex: '1 1 130px' }}>
+            <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 5, fontWeight: 600 }}>Fecha</label>
+            <input type="date" className="tf-input" value={date} onChange={e => setDate(e.target.value)} />
+          </div>
+          <div style={{ flex: '1 1 140px' }}>
+            <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 5, fontWeight: 600 }}>Estado</label>
+            <select className="tf-select" value={status} onChange={e => setStatus(e.target.value)} style={{ width: '100%' }}>
+              <option value="">Todos los estados</option>
+              {Object.entries(STATUS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            </select>
+          </div>
+          <div style={{ flex: '1 1 150px' }}>
+            <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 5, fontWeight: 600 }}>Agente</label>
+            <select className="tf-select" value={agentId} onChange={e => setAgentId(e.target.value)} style={{ width: '100%' }}>
+              <option value="">Todos los agentes</option>
+              {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+            </select>
+          </div>
+          <div style={{ flex: '2 1 180px' }}>
+            <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 5, fontWeight: 600 }}>Buscar</label>
+            <input className="tf-input" placeholder="Número o servicio..." value={search}
+              onChange={e => setSearch(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && load(1)} />
+          </div>
+          <Btn onClick={() => load(1)} variant="primary" disabled={loading}>
+            {loading ? <Spinner size={14} /> : '🔍 Buscar'}
+          </Btn>
+          <Btn onClick={() => { setDate(''); setStatus(''); setSearch(''); setAgentId(''); }} variant="secondary">
+            ✕ Limpiar
+          </Btn>
+        </div>
+      </div>
+
+      {/* Summary */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+        <StatCard label="Resultados" value={data.total} icon="🎫" color="var(--primary-light)" />
+        <StatCard label="Atendidos" value={data.items.filter(t => t.status === 'completed').length} icon="✅" color="#10B981" />
+        <StatCard label="Ausentes" value={data.items.filter(t => t.status === 'skipped').length} icon="❌" color="#EF4444" />
+        <StatCard label="En espera" value={data.items.filter(t => t.status === 'waiting').length} icon="⏳" color="#F59E0B" />
+      </div>
+
+      {/* Table */}
+      <div className="card" style={{ overflow: 'hidden' }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: 'var(--bg-card2)', fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                {['Ticket','Servicio','Ventanilla','Agente','Estado','Emitido','Llamado','Inicio Atención','Finalizado','T. Espera','T. Atención'].map(h => (
+                  <th key={h} style={{ padding: '11px 14px', textAlign: 'left', fontWeight: 700, whiteSpace: 'nowrap' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {loading && data.items.length === 0 && (
+                <tr><td colSpan={11} style={{ padding: 32, textAlign: 'center' }}><Spinner size={24} /></td></tr>
+              )}
+              {!loading && data.items.length === 0 && (
+                <tr><td colSpan={11} style={{ padding: '36px', textAlign: 'center', color: 'var(--text-dim)', fontSize: 14 }}>
+                  Sin resultados para los filtros seleccionados
+                </td></tr>
+              )}
+              {data.items.map(t => (
+                <tr key={t.id} className="tr-hover" style={{ borderTop: '1px solid var(--border)' }}>
+                  <td style={{ padding: '10px 14px' }}>
+                    <span className="ticket-num" style={{ fontSize: 16, color: t.serviceColor }}>{t.number}</span>
+                  </td>
+                  <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
+                    {t.serviceEmoji} {t.serviceName}
+                  </td>
+                  <td style={{ padding: '10px 14px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                    {t.stationName || '—'}
+                  </td>
+                  <td style={{ padding: '10px 14px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                    {t.agentName || '—'}
+                  </td>
+                  <td style={{ padding: '10px 14px' }}>
+                    <span className="badge" style={{ background: (STATUS_COLOR[t.status]||'#888')+'22', color: STATUS_COLOR[t.status]||'#888' }}>
+                      {STATUS_LABEL[t.status]||t.status}
+                    </span>
+                  </td>
+                  {[t.createdAt, t.calledAt, t.attendedAt, t.completedAt].map((ts, i) => (
+                    <td key={i} style={{ padding: '10px 14px', color: 'var(--text-muted)', whiteSpace: 'nowrap', fontFamily: 'JetBrains Mono', fontSize: 11 }}>
+                      {ts ? new Date(ts).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—'}
+                    </td>
+                  ))}
+                  <td style={{ padding: '10px 14px', whiteSpace: 'nowrap', fontFamily: 'JetBrains Mono', fontSize: 12, color: '#60A5FA' }}>
+                    {dur(t.createdAt, t.calledAt)}
+                  </td>
+                  <td style={{ padding: '10px 14px', whiteSpace: 'nowrap', fontFamily: 'JetBrains Mono', fontSize: 12, color: '#10B981' }}>
+                    {dur(t.attendedAt, t.completedAt)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        {data.totalPages > 1 && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderTop: '1px solid var(--border)' }}>
+            <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+              Mostrando {((page-1)*20)+1}–{Math.min(page*20, data.total)} de {data.total}
+            </span>
+            <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+              <Btn onClick={() => load(1)}        variant="secondary" size="sm" disabled={page===1||loading}>«</Btn>
+              <Btn onClick={() => load(page-1)}   variant="secondary" size="sm" disabled={page===1||loading}>‹ Anterior</Btn>
+              {Array.from({ length: Math.min(5, data.totalPages) }, (_, i) => {
+                let p;
+                if (data.totalPages <= 5) p = i + 1;
+                else if (page <= 3) p = i + 1;
+                else if (page >= data.totalPages - 2) p = data.totalPages - 4 + i;
+                else p = page - 2 + i;
+                return (
+                  <button key={p} onClick={() => load(p)} disabled={loading}
+                    style={{ width: 34, height: 34, borderRadius: 7, border: '1px solid var(--border-light)', fontWeight: p===page ? 800 : 400,
+                      background: p===page ? 'var(--primary)' : 'var(--bg-card2)', color: p===page ? '#fff' : 'var(--text-muted)',
+                      cursor: 'pointer', fontFamily: 'JetBrains Mono', fontSize: 13 }}>
+                    {p}
+                  </button>
+                );
+              })}
+              <Btn onClick={() => load(page+1)}        variant="secondary" size="sm" disabled={page===data.totalPages||loading}>Siguiente ›</Btn>
+              <Btn onClick={() => load(data.totalPages)} variant="secondary" size="sm" disabled={page===data.totalPages||loading}>»</Btn>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --- Admin: Users ---
+function AdminUsers({ user: currentUser, toast }) {
+  const [users, setUsers] = useState([]);
+  const [stations, setStations] = useState([]);
+  const [modal, setModal] = useState(null); // null | { mode: 'create'|'edit', data? }
+  const [form, setForm] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  const refresh = useCallback(async () => {
+    try {
+      const [u, s] = await Promise.all([API.get('/api/users'), API.get('/api/stations')]);
+      setUsers(u); setStations(s);
+    } catch (e) { toast(e.message, 'error'); }
+  }, []);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const roleColors = { admin: '#8B5CF6', gerente: '#3B82F6', agente: '#10B981', cliente: '#F59E0B' };
+  const roleLabels = { admin: 'Admin', gerente: 'Gerente', agente: 'Agente', cliente: 'Cliente' };
+  const availableRoles = currentUser.role === 'admin'
+    ? ['admin', 'gerente', 'agente']
+    : ['agente'];
+
+  const openCreate = () => { setForm({ role: 'agente', active: true }); setModal({ mode: 'create' }); };
+  const openEdit   = u => { setForm({ ...u, password: '' }); setModal({ mode: 'edit', id: u.id }); };
+
+  const save = async () => {
+    if (!form.name || !form.username) { toast('Nombre y usuario son obligatorios', 'warning'); return; }
+    if (modal.mode === 'create' && !form.password) { toast('La contraseña es obligatoria', 'warning'); return; }
+    setLoading(true);
+    try {
+      if (modal.mode === 'create') await API.post('/api/users', form);
+      else await API.put(`/api/users/${modal.id}`, form);
+      toast(modal.mode === 'create' ? 'Usuario creado' : 'Usuario actualizado', 'success');
+      setModal(null); refresh();
+    } catch (e) { toast(e.message, 'error'); }
+    finally { setLoading(false); }
+  };
+
+  const deactivate = async id => {
+    if (!confirm('¿Desactivar este usuario?')) return;
+    try { await API.delete(`/api/users/${id}`); toast('Usuario desactivado', 'success'); refresh(); }
+    catch (e) { toast(e.message, 'error'); }
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div>
+          <h2 style={{ fontSize: 24, fontWeight: 800, margin: 0 }}>Usuarios</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: '4px 0 0' }}>{users.filter(u => u.active).length} usuarios activos</p>
+        </div>
+        <Btn onClick={openCreate} variant="primary">+ Nuevo Usuario</Btn>
+      </div>
+
+      <div className="card" style={{ overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead style={{ background: 'var(--bg-card2)' }}>
+            <tr style={{ fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              {['Nombre', 'Usuario', 'Rol', 'Ventanilla', 'Estado', 'Acciones'].map(h => (
+                <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, letterSpacing: 0.5 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {users.map(u => (
+              <tr key={u.id} className="tr-hover" style={{ borderTop: '1px solid var(--border)', fontSize: 14 }}>
+                <td style={{ padding: '13px 16px', fontWeight: 600 }}>{u.name}</td>
+                <td style={{ padding: '13px 16px', color: 'var(--text-muted)', fontFamily: 'JetBrains Mono', fontSize: 13 }}>{u.username}</td>
+                <td style={{ padding: '13px 16px' }}><Badge color={roleColors[u.role]}>{roleLabels[u.role]}</Badge></td>
+                <td style={{ padding: '13px 16px', color: 'var(--text-muted)', fontSize: 13 }}>{stations.find(s => s.id === u.stationId)?.name || '—'}</td>
+                <td style={{ padding: '13px 16px' }}>
+                  <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 99, fontWeight: 600, background: u.active ? '#10B98122' : '#EF444422', color: u.active ? '#10B981' : '#EF4444' }}>
+                    {u.active ? '● Activo' : '○ Inactivo'}
+                  </span>
+                </td>
+                <td style={{ padding: '13px 16px' }}>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <Btn onClick={() => openEdit(u)} variant="secondary" size="sm">Editar</Btn>
+                    {u.active && u.id !== currentUser.id && <Btn onClick={() => deactivate(u.id)} variant="ghost" size="sm">Desactivar</Btn>}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <Modal open={!!modal} onClose={() => setModal(null)} title={modal?.mode === 'create' ? '+ Nuevo Usuario' : '✏️ Editar Usuario'}>
+        <FormField label="Nombre completo">
+          <input className="tf-input" value={form.name || ''} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ej: Juan Pérez" />
+        </FormField>
+        <FormField label="Nombre de usuario">
+          <input className="tf-input" value={form.username || ''} onChange={e => setForm(f => ({ ...f, username: e.target.value }))} placeholder="Ej: juan.perez" />
+        </FormField>
+        <FormField label={modal?.mode === 'edit' ? 'Nueva contraseña (dejar vacío para mantener)' : 'Contraseña'}>
+          <input className="tf-input" type="password" value={form.password || ''} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} placeholder="••••••••" />
+        </FormField>
+        <FormField label="Rol">
+          <select className="tf-select" style={{ width: '100%' }} value={form.role || 'agente'} onChange={e => setForm(f => ({ ...f, role: e.target.value }))}>
+            {availableRoles.map(r => <option key={r} value={r}>{roleLabels[r]}</option>)}
+          </select>
+        </FormField>
+        {form.role === 'agente' && (
+          <FormField label="Ventanilla asignada">
+            <select className="tf-select" style={{ width: '100%' }} value={form.stationId || ''} onChange={e => setForm(f => ({ ...f, stationId: e.target.value }))}>
+              <option value="">— Sin asignar —</option>
+              {stations.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </FormField>
+        )}
+        <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+          <Btn onClick={() => setModal(null)} variant="secondary" full>Cancelar</Btn>
+          <Btn onClick={save} variant="primary" full disabled={loading}>{loading ? <Spinner size={16} /> : 'Guardar'}</Btn>
+        </div>
+      </Modal>
+    </div>
+  );
+}
+
+// --- Admin: Services ---
+function AdminServices({ toast }) {
+  const [services, setServices] = useState([]);
+  const [modal, setModal] = useState(null);
+  const [form, setForm] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  const refresh = useCallback(async () => {
+    try { setServices(await API.get('/api/services/all')); } catch (e) { toast(e.message, 'error'); }
+  }, []);
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const openCreate = () => { setForm({ color: '#6366F1', emoji: '⭐', avgTime: 5, priority: 1 }); setModal({ mode: 'create' }); };
+  const openEdit   = s => { setForm({ ...s }); setModal({ mode: 'edit', id: s.id }); };
+
+  const save = async () => {
+    if (!form.name || !form.prefix) { toast('Nombre y prefijo son obligatorios', 'warning'); return; }
+    setLoading(true);
+    try {
+      if (modal.mode === 'create') await API.post('/api/services', form);
+      else await API.put(`/api/services/${modal.id}`, form);
+      toast('Servicio guardado', 'success'); setModal(null); refresh();
+    } catch (e) { toast(e.message, 'error'); }
+    finally { setLoading(false); }
+  };
+
+  const del = async id => {
+    if (!confirm('¿Desactivar este servicio?')) return;
+    try { await API.delete(`/api/services/${id}`); toast('Servicio desactivado', 'success'); refresh(); }
+    catch (e) { toast(e.message, 'error'); }
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div>
+          <h2 style={{ fontSize: 24, fontWeight: 800, margin: 0 }}>Servicios</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: '4px 0 0' }}>Tipos de atención disponibles en el tótem</p>
+        </div>
+        <Btn onClick={openCreate} variant="primary">+ Nuevo Servicio</Btn>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+        {services.map(s => (
+          <div key={s.id} className="card" style={{ padding: 22, borderTop: `3px solid ${s.color}`, opacity: s.active ? 1 : 0.5 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+              <span style={{ fontSize: 32 }}>{s.emoji}</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 16 }}>{s.name}</div>
+                <div className="badge" style={{ background: s.color + '22', color: s.color, marginTop: 2 }}>{s.prefix}###</div>
+              </div>
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>{s.description}</div>
+            <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 14 }}>⏱ {s.avgTime} min promedio · Prioridad {s.priority}</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Btn onClick={() => openEdit(s)} variant="secondary" size="sm">Editar</Btn>
+              {s.active && <Btn onClick={() => del(s.id)} variant="ghost" size="sm">Desactivar</Btn>}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <Modal open={!!modal} onClose={() => setModal(null)} title={modal?.mode === 'create' ? '+ Nuevo Servicio' : '✏️ Editar Servicio'}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div style={{ gridColumn: '1/-1' }}>
+            <FormField label="Nombre del servicio">
+              <input className="tf-input" value={form.name || ''} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ej: Caja" />
+            </FormField>
+          </div>
+          <FormField label="Prefijo (1-2 letras)">
+            <input className="tf-input" value={form.prefix || ''} onChange={e => setForm(f => ({ ...f, prefix: e.target.value.toUpperCase().slice(0, 2) }))} placeholder="Ej: C" maxLength={2} />
+          </FormField>
+          <FormField label="Emoji / Ícono">
+            <input className="tf-input" value={form.emoji || ''} onChange={e => setForm(f => ({ ...f, emoji: e.target.value }))} placeholder="💳" />
+          </FormField>
+          <FormField label="Color">
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <input type="color" value={form.color || '#6366F1'} onChange={e => setForm(f => ({ ...f, color: e.target.value }))} style={{ width: 44, height: 38, border: 'none', cursor: 'pointer', background: 'none', padding: 0 }} />
+              <input className="tf-input" value={form.color || ''} onChange={e => setForm(f => ({ ...f, color: e.target.value }))} placeholder="#6366F1" style={{ flex: 1 }} />
+            </div>
+          </FormField>
+          <FormField label="Tiempo promedio (min)">
+            <input className="tf-input" type="number" min={1} value={form.avgTime || 5} onChange={e => setForm(f => ({ ...f, avgTime: +e.target.value }))} />
+          </FormField>
+          <div style={{ gridColumn: '1/-1' }}>
+            <FormField label="Descripción">
+              <input className="tf-input" value={form.description || ''} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Breve descripción del servicio" />
+            </FormField>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+          <Btn onClick={() => setModal(null)} variant="secondary" full>Cancelar</Btn>
+          <Btn onClick={save} variant="primary" full disabled={loading}>{loading ? <Spinner size={16} /> : 'Guardar'}</Btn>
+        </div>
+      </Modal>
+    </div>
+  );
+}
+
+// --- Admin: Stations ---
+function AdminStations({ toast }) {
+  const [stations, setStations] = useState([]);
+  const [services, setServices] = useState([]);
+  const [users, setUsers]     = useState([]);
+  const [modal, setModal]     = useState(null);
+  const [form, setForm]       = useState({});
+  const [loading, setLoading] = useState(false);
+
+  const refresh = useCallback(async () => {
+    try {
+      const [st, sv, us] = await Promise.all([
+        API.get('/api/stations'), API.get('/api/services'), API.get('/api/users'),
+      ]);
+      setStations(st); setServices(sv); setUsers(us.filter(u => u.role === 'agente' && u.active));
+    } catch (e) { toast(e.message, 'error'); }
+  }, []);
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const openCreate = () => { setForm({ serviceIds: [], active: true }); setModal({ mode: 'create' }); };
+  const openEdit   = s => { setForm({ ...s, serviceIds: s.serviceIds || [] }); setModal({ mode: 'edit', id: s.id }); };
+
+  const toggleService = id => setForm(f => ({
+    ...f,
+    serviceIds: f.serviceIds.includes(id)
+      ? f.serviceIds.filter(s => s !== id)
+      : [...f.serviceIds, id],
+  }));
+
+  const save = async () => {
+    if (!form.name) { toast('Nombre es obligatorio', 'warning'); return; }
+    setLoading(true);
+    try {
+      if (modal.mode === 'create') await API.post('/api/stations', form);
+      else await API.put(`/api/stations/${modal.id}`, form);
+      toast('Ventanilla guardada', 'success'); setModal(null); refresh();
+    } catch (e) { toast(e.message, 'error'); }
+    finally { setLoading(false); }
+  };
+
+  const del = async id => {
+    if (!confirm('¿Eliminar esta ventanilla?')) return;
+    try { await API.delete(`/api/stations/${id}`); toast('Ventanilla eliminada', 'success'); refresh(); }
+    catch (e) { toast(e.message, 'error'); }
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div>
+          <h2 style={{ fontSize: 24, fontWeight: 800, margin: 0 }}>Ventanillas</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: '4px 0 0' }}>Puestos de atención y asignación de agentes</p>
+        </div>
+        <Btn onClick={openCreate} variant="primary">+ Nueva Ventanilla</Btn>
+      </div>
+      <div className="card" style={{ overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead style={{ background: 'var(--bg-card2)' }}>
+            <tr style={{ fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              {['Nombre', 'Servicios que atiende', 'Agente asignado', 'Estado', 'Acciones'].map(h => (
+                <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {stations.map(st => (
+              <tr key={st.id} className="tr-hover" style={{ borderTop: '1px solid var(--border)', fontSize: 14 }}>
+                <td style={{ padding: '13px 16px', fontWeight: 600 }}>{st.name}</td>
+                <td style={{ padding: '13px 16px' }}>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {(st.serviceIds || []).map(sid => {
+                      const svc = services.find(s => s.id === sid);
+                      return svc ? <Badge key={sid} color={svc.color}>{svc.emoji} {svc.name}</Badge> : null;
+                    })}
+                    {(st.serviceIds || []).length === 0 && <span style={{ color: 'var(--text-dim)', fontSize: 13 }}>Sin servicios</span>}
+                  </div>
+                </td>
+                <td style={{ padding: '13px 16px', color: 'var(--text-muted)' }}>
+                  {users.find(u => u.id === st.agentId)?.name || <span style={{ color: 'var(--text-dim)' }}>Sin asignar</span>}
+                </td>
+                <td style={{ padding: '13px 16px' }}>
+                  <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 99, fontWeight: 600, background: st.active ? '#10B98122' : '#EF444422', color: st.active ? '#10B981' : '#EF4444' }}>
+                    {st.active ? '● Activo' : '○ Inactivo'}
+                  </span>
+                </td>
+                <td style={{ padding: '13px 16px' }}>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <Btn onClick={() => openEdit(st)} variant="secondary" size="sm">Editar</Btn>
+                    <Btn onClick={() => del(st.id)} variant="ghost" size="sm">Eliminar</Btn>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <Modal open={!!modal} onClose={() => setModal(null)} title={modal?.mode === 'create' ? '+ Nueva Ventanilla' : '✏️ Editar Ventanilla'}>
+        <FormField label="Nombre de la ventanilla">
+          <input className="tf-input" value={form.name || ''} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ej: Caja 1" />
+        </FormField>
+        <FormField label="Servicios que atiende (seleccionar varios)">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {services.map(s => (
+              <div key={s.id} onClick={() => toggleService(s.id)}
+                style={{ padding: '7px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, transition: 'all 0.15s',
+                  background: (form.serviceIds || []).includes(s.id) ? s.color + '33' : 'var(--bg-card2)',
+                  border: `1px solid ${(form.serviceIds || []).includes(s.id) ? s.color : 'var(--border-light)'}`,
+                  color: (form.serviceIds || []).includes(s.id) ? s.color : 'var(--text-muted)',
+                }}>
+                {s.emoji} {s.name}
+              </div>
+            ))}
+          </div>
+        </FormField>
+        <FormField label="Agente asignado">
+          <select className="tf-select" style={{ width: '100%' }} value={form.agentId || ''} onChange={e => setForm(f => ({ ...f, agentId: e.target.value }))}>
+            <option value="">— Sin asignar —</option>
+            {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+          </select>
+        </FormField>
+        <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+          <Btn onClick={() => setModal(null)} variant="secondary" full>Cancelar</Btn>
+          <Btn onClick={save} variant="primary" full disabled={loading}>{loading ? <Spinner size={16} /> : 'Guardar'}</Btn>
+        </div>
+      </Modal>
+    </div>
+  );
+}
+
+// --- Admin: Config ---
+function AdminConfig({ toast }) {
+  const [config, setConfig] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    API.get('/api/config').then(setConfig).catch(e => toast(e.message, 'error'));
+  }, []);
+
+  const save = async () => {
+    setLoading(true);
+    try { await API.put('/api/config', config); toast('Configuración guardada ✓', 'success'); }
+    catch (e) { toast(e.message, 'error'); }
+    finally { setLoading(false); }
+  };
+
+  if (!config) return <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--text-muted)' }}><Spinner /> Cargando...</div>;
+
+  const F = ({ label, field, type = 'text', placeholder = '' }) => (
+    <FormField label={label}>
+      <input className="tf-input" type={type} value={config[field] || ''} placeholder={placeholder}
+        onChange={e => setConfig(c => ({ ...c, [field]: e.target.value }))} />
+    </FormField>
+  );
+
+  return (
+    <div>
+      <div style={{ marginBottom: 24 }}>
+        <h2 style={{ fontSize: 24, fontWeight: 800, margin: 0 }}>Configuración General</h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: '4px 0 0' }}>Personalización del sistema</p>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, maxWidth: 760 }}>
+        <div className="card" style={{ padding: 22 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 18, marginTop: 0 }}>🏢 Identidad del negocio</h3>
+          <F label="Nombre del negocio" field="businessName" placeholder="Mi Empresa" />
+          <F label="Subtítulo" field="businessSubtitle" placeholder="Sistema de Turnos" />
+          <F label="URL del logo" field="logoUrl" placeholder="https://..." />
+          <FormField label="Color primario">
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <input type="color" value={config.primaryColor || '#6366F1'} onChange={e => setConfig(c => ({ ...c, primaryColor: e.target.value }))} style={{ width: 44, height: 38, border: 'none', cursor: 'pointer', background: 'none', padding: 0 }} />
+              <input className="tf-input" value={config.primaryColor || ''} onChange={e => setConfig(c => ({ ...c, primaryColor: e.target.value }))} style={{ flex: 1 }} />
+            </div>
+          </FormField>
+        </div>
+        <div className="card" style={{ padding: 22 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 18, marginTop: 0 }}>💬 Mensajes</h3>
+          <F label="Mensaje de bienvenida (tótem)" field="welcomeMessage" placeholder="¡Bienvenido!" />
+          <F label="Título del monitor" field="monitorTitle" placeholder="TURNO EN ATENCIÓN" />
+          <F label="Mensaje en ticker" field="footerMessage" placeholder="Gracias por su espera..." />
+          <F label="Pie del ticket impreso" field="ticketFooter" placeholder="Conserve este ticket..." />
+        </div>
+        <div className="card" style={{ padding: 22, gridColumn: '1/-1' }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, marginTop: 0 }}>🔊 Opciones</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <input type="checkbox" id="sound" checked={!!config.soundEnabled} onChange={e => setConfig(c => ({ ...c, soundEnabled: e.target.checked }))} style={{ width: 16, height: 16 }} />
+            <label htmlFor="sound" style={{ fontSize: 14, cursor: 'pointer' }}>Activar sonido en el monitor al llamar un turno</label>
+          </div>
+        </div>
+      </div>
+      <div style={{ marginTop: 24, maxWidth: 760 }}>
+        <Btn onClick={save} variant="primary" size="lg" disabled={loading}>{loading ? <Spinner size={18} /> : '💾 Guardar cambios'}</Btn>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// CLOCK COMPONENT
+// ============================================================
+function Clock({ large }) {
+  const [time, setTime] = useState(new Date());
+  useEffect(() => {
+    const iv = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(iv);
+  }, []);
+  return (
+    <div className="mono" style={{ fontSize: large ? 24 : 14, fontWeight: 700, color: large ? 'var(--text)' : 'var(--text-muted)', letterSpacing: 1 }}>
+      {time.toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+    </div>
+  );
+}
+
+// ============================================================
+// ERROR BOUNDARY — evita que crashes de render destruyan la app
+// ============================================================
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(err) { return { error: err }; }
+  componentDidCatch(err, info) { console.error('[ErrorBoundary]', err, info); }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ minHeight: '100vh', background: 'var(--bg-base)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 40 }}>
+          <div style={{ fontSize: 48 }}>⚠️</div>
+          <h2 style={{ fontWeight: 800, fontSize: 22, margin: 0 }}>Error en la pantalla</h2>
+          <pre style={{ fontSize: 12, color: '#EF4444', background: '#1a0a0a', padding: 16, borderRadius: 8, maxWidth: 600, overflow: 'auto' }}>
+            {this.state.error.message}
+          </pre>
+          <button onClick={() => { this.setState({ error: null }); window.location.reload(); }}
+            style={{ background: 'var(--primary)', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+            Recargar
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// ============================================================
+// SOCKET SINGLETON — fuera de React para evitar desconexiones por ciclo de vida
+// ============================================================
+const _socket = io({
+  transports: ['websocket', 'polling'],
+  reconnection: true,
+  reconnectionDelay: 1000,
+  reconnectionAttempts: Infinity,
+  timeout: 10000,
+});
+_socket.on('connect',    () => console.log('[WS] Conectado:', _socket.id));
+_socket.on('disconnect', r  => console.log('[WS] Desconectado:', r));
+_socket.on('connect_error', e => console.warn('[WS] Error de conexión:', e.message));
+
+// ============================================================
+// MAIN APP
+// ============================================================
+function App() {
+  const [path, setPath] = useState(() => window.location.hash.slice(1) || '/');
+  const [user, setUser]   = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setPath(window.location.hash.slice(1) || '/');
+    window.addEventListener('hashchange', handler);
+    return () => window.removeEventListener('hashchange', handler);
+  }, []);
+
+  useEffect(() => {
+    const token = API.token;
+    if (token) {
+      API.get('/api/auth/me')
+        .then(u => { setUser(u); })
+        .catch(() => { API.token = null; })
+        .finally(() => setAuthChecked(true));
+    } else { setAuthChecked(true); }
+  }, []);
+
+  const navigate = to => { window.location.hash = to; };
+
+  const login = async (username, password) => {
+    const data = await API.post('/api/auth/login', { username, password });
+    API.token = data.token;
+    setUser(data.user);
+    if (data.user.role === 'agente') navigate('/agent');
+    else navigate('/admin');
+    return data;
+  };
+
+  const logout = async () => {
+    try { await API.post('/api/auth/logout', {}); } catch {}
+    API.token = null;
+    setUser(null);
+    navigate('/');
+  };
+
+  if (!authChecked) return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-base)', flexDirection: 'column', gap: 16 }}>
+      <Spinner size={40} />
+      <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Iniciando TurnoFácil...</p>
+    </div>
+  );
+
+  const route = path.split('?')[0];
+
+  if (route === '/monitor') return <MonitorPage socket={_socket} />;
+  if (route === '/totem')   return <TotemPage socket={_socket} />;
+
+  if (route === '/agent') {
+    if (!user || user.role !== 'agente') return <LoginPage onLogin={login} redirectTo="/agent" />;
+    return <AgentPage user={user} socket={_socket} onLogout={logout} />;
+  }
+
+  if (route === '/admin') {
+    if (!user || !['admin', 'gerente'].includes(user.role)) return <LoginPage onLogin={login} redirectTo="/admin" />;
+    return <AdminPage user={user} socket={_socket} onLogout={logout} />;
+  }
+
+  return <HomePage navigate={navigate} />;
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <ErrorBoundary>
+    <ThemeProvider>
+      <ToastProvider>
+        <App />
+      </ToastProvider>
+    </ThemeProvider>
+  </ErrorBoundary>
+);
+  </script>
+</body>
+</html>
