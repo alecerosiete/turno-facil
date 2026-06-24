@@ -9,7 +9,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.26.10/babel.min.js"></script>
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <style>
     * { font-family: 'Outfit', sans-serif; box-sizing: border-box; }
@@ -48,6 +48,83 @@
     }
 
     body { background: var(--bg-base); color: var(--text); }
+
+    /* Swagger UI dark mode overrides */
+    .swagger-ui { color: var(--text) !important; }
+    .swagger-ui .info .title { color: var(--text) !important; }
+    .swagger-ui .info .description p { color: var(--text) !important; }
+    .swagger-ui .info li, .swagger-ui .info p, .swagger-ui .info table { color: var(--text-muted) !important; }
+    .swagger-ui table thead tr td, .swagger-ui table thead tr th { color: var(--text) !important; }
+    .swagger-ui .opblock-tag { color: var(--text) !important; border-color: var(--border) !important; }
+    .swagger-ui .opblock-tag small { color: var(--text-muted) !important; }
+    .swagger-ui .opblock .opblock-section-header { background: var(--bg-card2) !important; border-color: var(--border) !important; }
+    .swagger-ui .opblock .opblock-section-header h4 { color: var(--text) !important; }
+    .swagger-ui .opblock { border-radius: 8px !important; margin-bottom: 12px !important; }
+    .swagger-ui .opblock .opblock-summary { border-color: var(--border) !important; }
+    .swagger-ui .opblock .opblock-summary .view-line-link { color: var(--text-muted) !important; }
+    .swagger-ui .opblock .opblock-summary-description { color: var(--text-muted) !important; }
+    .swagger-ui .opblock .opblock-summary-operation { color: var(--text) !important; }
+    .swagger-ui .opblock .opblock-summary-method { border-radius: 6px !important; }
+    .swagger-ui .opblock .opblock-body { background: var(--bg-card) !important; }
+    .swagger-ui .opblock .opblock-body .opblock-description-wrapper p { color: var(--text) !important; }
+    .swagger-ui .opblock .opblock-body .opblock-description-wrapper, .swagger-ui .opblock .opblock-body .opblock-external-docs-wrapper, .swagger-ui .opblock .opblock-body .parameter__name, .swagger-ui .opblock .opblock-body .parameter__type, .swagger-ui .opblock .opblock-body .parameter__in, .swagger-ui .opblock .opblock-body .parameters-col_description, .swagger-ui .opblock .opblock-body .parameters-col_name { color: var(--text) !important; }
+    .swagger-ui .opblock .opblock-body table thead tr td, .swagger-ui .opblock .opblock-body table thead tr th { color: var(--text-muted) !important; border-color: var(--border) !important; }
+    .swagger-ui .opblock .opblock-body table tbody tr td { color: var(--text) !important; border-color: var(--border) !important; }
+    .swagger-ui .response-col_status, .swagger-ui .response-col_description, .swagger-ui .response-col_links { color: var(--text) !important; }
+    .swagger-ui .responses-inner h4, .swagger-ui .responses-inner h5, .swagger-ui .responses-inner .response-col_status { color: var(--text) !important; }
+    .swagger-ui .model-box, .swagger-ui .model { color: var(--text) !important; }
+    .swagger-ui .model-title { color: var(--text) !important; }
+    .swagger-ui .model-toggle:after { filter: invert(0.8); }
+    .swagger-ui section.models { border-color: var(--border) !important; }
+    .swagger-ui section.models.is-open h4 { border-color: var(--border) !important; }
+    .swagger-ui section.models .model-container { background: var(--bg-card2) !important; border-color: var(--border) !important; border-radius: 6px !important; margin: 8px 0 !important; }
+    .swagger-ui .prop-type { color: var(--primary-light) !important; }
+    .swagger-ui .prop-format { color: var(--text-muted) !important; }
+    .swagger-ui .btn { border-color: var(--border-light) !important; color: var(--text) !important; border-radius: 6px !important; }
+    .swagger-ui .btn:hover { background: var(--bg-card2) !important; }
+    .swagger-ui .btn.execute { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; }
+    .swagger-ui .btn.execute:hover { opacity: 0.9; }
+    .swagger-ui input[type=text], .swagger-ui select, .swagger-ui textarea { background: var(--bg-base) !important; color: var(--text) !important; border-color: var(--border-light) !important; border-radius: 6px !important; }
+    .swagger-ui input[type=text]:focus, .swagger-ui select:focus, .swagger-ui textarea:focus { border-color: var(--primary) !important; }
+    .swagger-ui .parameter__name { color: var(--text) !important; }
+    .swagger-ui .parameter__type { color: var(--text-muted) !important; }
+    .swagger-ui .parameter__in { color: var(--text-dim) !important; }
+    .swagger-ui .loading-container { color: var(--text-muted) !important; }
+    .swagger-ui .loading-container .loading { background: var(--bg-card) !important; border-color: var(--border) !important; }
+    .swagger-ui .topbar { display: none !important; }
+    .swagger-ui .scheme-container { background: var(--bg-card2) !important; border-color: var(--border) !important; border-radius: 8px !important; box-shadow: none !important; padding: 16px 24px !important; }
+    .swagger-ui .scheme-container .schemes-title, .swagger-ui .scheme-container .servers-title { color: var(--text-muted) !important; }
+    .swagger-ui .scheme-container select { background: var(--bg-base) !important; color: var(--text) !important; border-color: var(--border-light) !important; }
+    .swagger-ui .info { margin: 24px 0 !important; }
+    .swagger-ui .info .base-url { background: var(--bg-card2) !important; color: var(--text-muted) !important; border-radius: 6px !important; padding: 4px 12px !important; }
+    .swagger-ui .info hgroup.main a { color: var(--primary-light) !important; }
+    .swagger-ui .info .info-url a { color: var(--primary-light) !important; }
+    .swagger-ui .info .license a, .swagger-ui .info .contact a { color: var(--primary-light) !important; }
+    .swagger-ui .global-server-container { background: var(--bg-card2) !important; border-color: var(--border) !important; border-radius: 8px !important; }
+    .swagger-ui .responses-header td, .swagger-ui .responses-wrapper, .swagger-ui .responses-inner { background: var(--bg-card) !important; }
+    .swagger-ui .response-col_links { color: var(--text-muted) !important; }
+    .swagger-ui .tab li { color: var(--text-muted) !important; }
+    .swagger-ui .tab li.active { color: var(--primary-light) !important; }
+    .swagger-ui .expand-operation, .swagger-ui .opblock-control-arrow { filter: invert(0.8); }
+    .swagger-ui .highlight-code > .microlight { background: var(--bg-base) !important; color: var(--text) !important; border-radius: 6px !important; }
+    .swagger-ui .curl-command { background: var(--bg-base) !important; border-color: var(--border) !important; border-radius: 6px !important; color: var(--text) !important; }
+    .swagger-ui .responses-wrapper { border-radius: 8px !important; }
+    .swagger-ui .model-box.control-panel { background: var(--bg-card2) !important; border-color: var(--border) !important; border-radius: 6px !important; }
+    .swagger-ui .dialog-ux .backdrop-ux { background: rgba(0,0,0,0.6) !important; }
+    .swagger-ui .dialog-ux .modal-ux { background: var(--bg-card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; }
+    .swagger-ui .dialog-ux .modal-ux-content h4, .swagger-ui .dialog-ux .modal-ux-content p { color: var(--text) !important; }
+    .swagger-ui .dialog-ux .modal-ux-header h3 { color: var(--text) !important; }
+    .swagger-ui .dialog-ux .modal-ux-header { border-color: var(--border) !important; }
+    .swagger-ui .auth-container { color: var(--text) !important; }
+    .swagger-ui .auth-container input[type=text], .swagger-ui .auth-container input[type=password] { background: var(--bg-base) !important; color: var(--text) !important; border-color: var(--border-light) !important; }
+    .swagger-ui .auth-container .auth-btn-wrapper .btn { border-color: var(--border-light) !important; color: var(--text) !important; }
+    .swagger-ui .auth-wrapper .authorize { border-color: var(--primary) !important; color: var(--primary) !important; }
+    .swagger-ui .auth-wrapper .authorize svg { fill: var(--primary) !important; }
+    .swagger-ui .errors-wrapper { background: rgba(239,68,68,0.12) !important; border-color: rgba(239,68,68,0.3) !important; border-radius: 8px !important; }
+    .swagger-ui .errors-wrapper h2, .swagger-ui .errors-wrapper .errors h4, .swagger-ui .errors-wrapper .errors small { color: #ef4444 !important; }
+    .swagger-ui .errors-wrapper .error-wrapper { border-color: rgba(239,68,68,0.2) !important; }
+    .swagger-ui .markdown p, .swagger-ui .markdown pre, .swagger-ui .markdown code { color: var(--text) !important; }
+    .swagger-ui .opblock .opblock-body .opblock-description-wrapper p, .swagger-ui .opblock .opblock-body .opblock-description-wrapper .markdown p { color: var(--text) !important; }
 
     .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; }
     .card2 { background: var(--bg-card2); border: 1px solid var(--border); border-radius: 10px; }
@@ -212,10 +289,32 @@ function playBeep(freq = 820, dur = 0.35, vol = 0.4) {
 }
 
 function playSuccess() {
-  // Tres tonos ascendentes: llamativo pero no molesto
   playBeep(520, 0.12, 0.3);
   setTimeout(() => playBeep(660, 0.12, 0.35), 130);
   setTimeout(() => playBeep(880, 0.28, 0.4),  260);
+}
+
+// ============================================================
+// TTS — Llamado por voz
+// ============================================================
+function speakTicket(ticket) {
+  if (!window.speechSynthesis) { console.warn('[TTS] speechSynthesis no disponible'); return; }
+  try {
+    window.speechSynthesis.cancel();
+    const text = `Ticket ${ticket.number}, ${ticket.stationName || ticket.serviceName}`;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'es';
+    u.rate = 0.9;
+    u.pitch = 1.0;
+    u.volume = 1.0;
+    const voices = window.speechSynthesis.getVoices();
+    console.log('[TTS] voces disponibles:', voices.length, voices.map(v => v.name + '/' + v.lang));
+    const esVoice = voices.find(v => v.lang.startsWith('es'));
+    if (esVoice) u.voice = esVoice;
+    u.onerror = e => console.warn('[TTS] error:', e.error);
+    u.onstart = () => console.log('[TTS] reproduciendo:', text);
+    window.speechSynthesis.speak(u);
+  } catch (e) { console.warn('[TTS]', e.message); }
 }
 
 // ============================================================
@@ -641,6 +740,18 @@ function MonitorPage({ socket }) {
   const handleUnlock = () => {
     unlockAudio();
     setSoundReady(true);
+    // Inicializar speechSynthesis (requiere gesto del usuario en Chrome)
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      const prime = new SpeechSynthesisUtterance('uno');
+      prime.lang = 'es';
+      prime.volume = 0.001;
+      prime.onerror = () => console.warn('[TTS] prime error');
+      window.speechSynthesis.speak(prime);
+      // Chrome necesita que la utterance se pronuncie completamente
+      // para habilitar speechSynthesis para llamadas no-iniciadas por el usuario
+      setTimeout(() => window.speechSynthesis.cancel(), 300);
+    }
   };
 
   const toggleSound = e => {
@@ -709,6 +820,7 @@ function MonitorPage({ socket }) {
       setFlashId(ticket.id);
       setTimeout(() => setFlashId(null), 1200);
       if (soundReadyRef.current && soundEnabledRef.current) playSuccess();
+      if (soundReadyRef.current && ticket.status === 'called') speakTicket(ticket);
     };
 
     const onCompleted = ticket => pushTicket(ticket);
@@ -1007,14 +1119,14 @@ function TicketHistoryModal({ open, onClose, agentId }) {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ background: 'var(--bg-card2)', fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              {['Ticket', 'Servicio', 'Ventanilla', 'Estado', 'Emitido', 'Llamado', 'Atención', 'Finalizado', 'T. Espera', 'T. Atención'].map(h => (
+              {['Ticket', 'Servicio', 'Ventanilla', 'Estado', 'Emitido', 'Llamado', 'Atención', 'Finalizado', 'T. Espera', 'T. Atención', 'Notas'].map(h => (
                 <th key={h} style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 700, whiteSpace: 'nowrap' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {data.items.length === 0 && (
-              <tr><td colSpan={10} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-dim)' }}>
+              <tr><td colSpan={11} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-dim)' }}>
                 {loading ? <Spinner size={20} /> : 'Sin resultados para los filtros seleccionados'}
               </td></tr>
             )}
@@ -1052,6 +1164,16 @@ function TicketHistoryModal({ open, onClose, agentId }) {
                 <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', fontFamily: 'JetBrains Mono', fontSize: 12, color: '#10B981' }}>
                   {dur(t.attendedAt, t.completedAt)}
                 </td>
+                <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>
+                  {t.notes && t.notes.length > 0 ? (
+                    <span className="badge" style={{ background: '#8B5CF622', color: '#8B5CF6', cursor: 'pointer' }}
+                      title={t.notes.map(n => `${n.agentName}: ${n.note}`).join('\n')}>
+                      📝 {t.notes.length}
+                    </span>
+                  ) : (
+                    <span style={{ color: 'var(--text-dim)', fontSize: 12 }}>—</span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -1083,6 +1205,56 @@ function TicketHistoryModal({ open, onClose, agentId }) {
         </div>
       )}
     </Modal>
+  );
+}
+
+// ============================================================
+// NOTES SECTION COMPONENT
+// ============================================================
+function NotesSection({ ticketId, initialNotes }) {
+  const [notes, setNotes] = useState(initialNotes || []);
+  const [text, setText] = useState('');
+  const [saving, setSaving] = useState(false);
+  const toast = useToast();
+
+  useEffect(() => { setNotes(initialNotes || []); }, [initialNotes]);
+
+  const addNote = async () => {
+    if (!text.trim()) return;
+    setSaving(true);
+    try {
+      const saved = await API.post(`/api/tickets/${ticketId}/notes`, { note: text.trim() });
+      setNotes(n => [...n, saved]);
+      setText('');
+      toast('Nota guardada', 'success');
+    } catch (e) { toast(e.message, 'error'); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div style={{ marginTop: 16, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: 2, marginBottom: 12, textTransform: 'uppercase' }}>📝 Notas</div>
+      {notes.length > 0 && (
+        <div style={{ marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {notes.map(n => (
+            <div key={n.id} className="card2" style={{ padding: '10px 14px', fontSize: 13, borderLeft: '3px solid var(--primary-light)' }}>
+              <div style={{ color: 'var(--text)', marginBottom: 4, whiteSpace: 'pre-wrap' }}>{n.note}</div>
+              <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>
+                {n.agentName} · {new Date(n.createdAt).toLocaleString('es-PY', { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input className="tf-input" value={text} onChange={e => setText(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && !saving && addNote()}
+          placeholder="Agregar observación..." style={{ flex: 1 }} />
+        <Btn onClick={addNote} variant="primary" size="sm" disabled={saving || !text.trim()}>
+          {saving ? <Spinner size={14} /> : 'Guardar'}
+        </Btn>
+      </div>
+    </div>
   );
 }
 
@@ -1217,6 +1389,11 @@ function AgentPage({ user, socket, onLogout }) {
                     </>
                   )}
                 </div>
+
+                {/* Notes section */}
+                {(ct.status === 'called' || ct.status === 'attending') && (
+                  <NotesSection ticketId={ct.id} initialNotes={agentState.notes || []} />
+                )}
               </>
             ) : (
               <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-dim)' }}>
@@ -1307,6 +1484,8 @@ function AdminPage({ user, socket, onLogout }) {
     { id: 'services',  label: 'Servicios',     emoji: '⚡' },
     { id: 'stations',  label: 'Ventanillas',   emoji: '🏢' },
     { id: 'config',    label: 'Configuración', emoji: '⚙️', hide: user.role !== 'admin' },
+    { id: 'api',       label: 'API',            emoji: '🔑', hide: user.role !== 'admin' },
+    { id: 'apidocs',   label: 'Documentación',  emoji: '📖', hide: user.role !== 'admin' },
   ].filter(n => !n.hide);
 
   return (
@@ -1356,6 +1535,8 @@ function AdminPage({ user, socket, onLogout }) {
         {tab === 'services'  && <AdminServices user={user} toast={toast} />}
         {tab === 'stations'  && <AdminStations user={user} toast={toast} />}
         {tab === 'config'    && <AdminConfig toast={toast} />}
+        {tab === 'api'       && <AdminApiKeys toast={toast} />}
+        {tab === 'apidocs'   && <AdminApiDocs />}
       </div>
     </div>
   );
@@ -1586,17 +1767,17 @@ function AdminHistory({ toast }) {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ background: 'var(--bg-card2)', fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                {['Ticket','Servicio','Ventanilla','Agente','Estado','Emitido','Llamado','Inicio Atención','Finalizado','T. Espera','T. Atención'].map(h => (
+                {['Ticket','Servicio','Ventanilla','Agente','Estado','Emitido','Llamado','Inicio Atención','Finalizado','T. Espera','T. Atención','Notas'].map(h => (
                   <th key={h} style={{ padding: '11px 14px', textAlign: 'left', fontWeight: 700, whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {loading && data.items.length === 0 && (
-                <tr><td colSpan={11} style={{ padding: 32, textAlign: 'center' }}><Spinner size={24} /></td></tr>
+                <tr><td colSpan={12} style={{ padding: 32, textAlign: 'center' }}><Spinner size={24} /></td></tr>
               )}
               {!loading && data.items.length === 0 && (
-                <tr><td colSpan={11} style={{ padding: '36px', textAlign: 'center', color: 'var(--text-dim)', fontSize: 14 }}>
+                <tr><td colSpan={12} style={{ padding: '36px', textAlign: 'center', color: 'var(--text-dim)', fontSize: 14 }}>
                   Sin resultados para los filtros seleccionados
                 </td></tr>
               )}
@@ -1629,6 +1810,16 @@ function AdminHistory({ toast }) {
                   </td>
                   <td style={{ padding: '10px 14px', whiteSpace: 'nowrap', fontFamily: 'JetBrains Mono', fontSize: 12, color: '#10B981' }}>
                     {dur(t.attendedAt, t.completedAt)}
+                  </td>
+                  <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
+                    {t.notes && t.notes.length > 0 ? (
+                      <span className="badge" style={{ background: '#8B5CF622', color: '#8B5CF6', cursor: 'pointer' }}
+                        title={t.notes.map(n => `${n.agentName}: ${n.note}`).join('\n')}>
+                        📝 {t.notes.length}
+                      </span>
+                    ) : (
+                      <span style={{ color: 'var(--text-dim)', fontSize: 12 }}>—</span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -2085,6 +2276,189 @@ function AdminConfig({ toast }) {
 }
 
 // ============================================================
+// ADMIN API KEYS
+// ============================================================
+function AdminApiKeys({ toast }) {
+  const [keys, setKeys] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [newKey, setNewKey] = useState(null);   // { key } mostrado una vez
+
+  const refresh = useCallback(async () => {
+    try { setKeys(await API.get('/api/api-keys')); } catch (e) { toast(e.message, 'error'); }
+  }, []);
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const generate = async () => {
+    const name = prompt('Nombre para identificar esta API Key (ej: Sistema Cliente X):');
+    if (!name) return;
+    setLoading(true);
+    try {
+      const data = await API.post('/api/api-keys', { name });
+      setNewKey(data);
+      refresh();
+    } catch (e) { toast(e.message, 'error'); }
+    finally { setLoading(false); }
+  };
+
+  const revoke = async id => {
+    if (!confirm('¿Revocar esta API Key? Los sistemas que la usen dejarán de funcionar.')) return;
+    try {
+      await API.delete(`/api/api-keys/${id}`);
+      toast('API Key revocada', 'success');
+      refresh();
+    } catch (e) { toast(e.message, 'error'); }
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div>
+          <h2 style={{ fontSize: 24, fontWeight: 800, margin: 0 }}>🔑 API Keys</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: '4px 0 0' }}>
+            Claves de integración para sistemas externos. {keys.filter(k => k.active).length} activas
+          </p>
+        </div>
+        <Btn onClick={generate} variant="primary" disabled={loading}>
+          {loading ? <Spinner size={14} /> : '+ Generar API Key'}
+        </Btn>
+      </div>
+
+      {/* Modal mostrar nueva key (solo una vez) */}
+      {newKey && (
+        <div className="card" style={{ marginBottom: 20, border: '2px solid #F59E0B', padding: 20 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#F59E0B', marginBottom: 8 }}>⚠️ API Key Generada</div>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>
+            Esta es la única vez que verás esta clave. Cópiala ahora y guárdala en un lugar seguro.
+          </p>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <code style={{ flex: 1, padding: '12px 16px', background: 'var(--bg-card2)', borderRadius: 8, fontSize: 13, fontFamily: 'JetBrains Mono', wordBreak: 'break-all' }}>
+              {newKey.key}
+            </code>
+            <Btn onClick={() => { navigator.clipboard.writeText(newKey.key); toast('Copiado al portapapeles', 'success'); }} variant="primary">
+              📋 Copiar
+            </Btn>
+            <Btn onClick={() => setNewKey(null)} variant="secondary">Cerrar</Btn>
+          </div>
+        </div>
+      )}
+
+      <div className="card" style={{ overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead style={{ background: 'var(--bg-card2)' }}>
+            <tr style={{ fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              {['Nombre', 'Clave (prefijo)', 'Creada', 'Último uso', 'Estado', 'Acciones'].map(h => (
+                <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {keys.length === 0 && (
+              <tr><td colSpan={6} style={{ padding: 32, textAlign: 'center', color: 'var(--text-dim)' }}>No hay API Keys generadas</td></tr>
+            )}
+            {keys.map(k => (
+              <tr key={k.id} className="tr-hover" style={{ borderTop: '1px solid var(--border)', fontSize: 14 }}>
+                <td style={{ padding: '13px 16px', fontWeight: 600 }}>{k.name}</td>
+                <td style={{ padding: '13px 16px' }}>
+                  <code style={{ fontSize: 13, fontFamily: 'JetBrains Mono', color: 'var(--text-muted)' }}>{k.prefix}</code>
+                </td>
+                <td style={{ padding: '13px 16px', color: 'var(--text-muted)', fontSize: 13 }}>
+                  {new Date(k.createdAt).toLocaleDateString('es-PY', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                </td>
+                <td style={{ padding: '13px 16px', color: 'var(--text-muted)', fontSize: 13 }}>
+                  {k.lastUsedAt ? new Date(k.lastUsedAt).toLocaleDateString('es-PY', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'}
+                </td>
+                <td style={{ padding: '13px 16px' }}>
+                  <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 99, fontWeight: 600, background: k.active ? '#10B98122' : '#EF444422', color: k.active ? '#10B981' : '#EF4444' }}>
+                    {k.active ? '● Activa' : '○ Revocada'}
+                  </span>
+                </td>
+                <td style={{ padding: '13px 16px' }}>
+                  {k.active && <Btn onClick={() => revoke(k.id)} variant="ghost" size="sm">Revocar</Btn>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// ADMIN API DOCS (Swagger UI embebido)
+// ============================================================
+function AdminApiDocs() {
+  const containerRef = useRef(null);
+  const swaggerRef = useRef(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (swaggerRef.current) return;
+    let destroyed = false;
+
+    const loadSwagger = () => {
+      if (!containerRef.current || !window.SwaggerUIBundle || swaggerRef.current || destroyed) return;
+      swaggerRef.current = window.SwaggerUIBundle({
+        url: '/api/docs/swagger.json',
+        domNode: containerRef.current,
+        presets: [
+          window.SwaggerUIBundle.presets.apis,
+          window.SwaggerUIBundle.SwaggerUIStandalonePreset,
+        ],
+        layout: 'BaseLayout',
+        docExpansion: 'list',
+        defaultModelExpandDepth: 2,
+        filter: true,
+        showExtensions: true,
+        showCommonExtensions: true,
+      });
+      setReady(true);
+    };
+
+    let link = document.querySelector('link[href*="swagger-ui.css"]');
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.17.14/swagger-ui.css';
+      document.head.appendChild(link);
+    }
+    let script = document.querySelector('script[src*="swagger-ui-bundle"]');
+    if (!script) {
+      script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.17.14/swagger-ui-bundle.js';
+      script.crossOrigin = 'anonymous';
+      script.onload = loadSwagger;
+      document.body.appendChild(script);
+    } else if (window.SwaggerUIBundle) {
+      loadSwagger();
+    }
+
+    return () => {
+      destroyed = true;
+      if (swaggerRef.current) {
+        try {
+          const el = containerRef.current;
+          if (el) el.innerHTML = '';
+        } catch (_) {}
+      }
+      swaggerRef.current = null;
+    };
+  }, []);
+
+  return (
+    <div style={{ minHeight: 'calc(100vh - 56px)', position: 'relative' }}>
+      <div ref={containerRef} style={{ padding: '20px 0' }} />
+      {!ready && (
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-card)', color: 'var(--text-muted)' }}>
+          <Spinner size={32} />
+          <p style={{ marginTop: 16 }}>Cargando documentación de la API...</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
 // CLOCK COMPONENT
 // ============================================================
 function Clock({ large }) {
@@ -2153,6 +2527,17 @@ function App() {
     const handler = () => setPath(window.location.hash.slice(1) || '/');
     window.addEventListener('hashchange', handler);
     return () => window.removeEventListener('hashchange', handler);
+  }, []);
+
+  // Precargar voces de speechSynthesis
+  useEffect(() => {
+    if (window.speechSynthesis) {
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.onvoiceschanged = () => {
+        const v = window.speechSynthesis.getVoices();
+        console.log('[TTS] Voces cargadas:', v.length, v.map(x => x.name + '/' + x.lang));
+      };
+    }
   }, []);
 
   useEffect(() => {
