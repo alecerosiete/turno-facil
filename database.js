@@ -5,7 +5,7 @@ const fs = require('fs');
 
 const DB_DIR = path.join(__dirname, 'data');
 const DB_PATH = path.join(DB_DIR, 'turnofacil.db');
-const SALT_ROUNDS = 10;
+const SALT_ROUNDS = parseInt(process.env.SALT_ROUNDS, 10) || 10;
 
 let db;
 
